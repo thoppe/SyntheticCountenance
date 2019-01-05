@@ -8,6 +8,12 @@ random.shuffle(F_JPG)
 
 for f in tqdm(F_JPG):
     f_json = f.replace('/imgs/', '/info/').replace('.jpg', '.json')
+
+    if not os.path.exists(f_json):
+        print(f"Removing {f}")
+        os.remove(f)
+        continue
+    
     with open(f_json) as FIN:
         js = json.loads(FIN.read())
 
@@ -15,7 +21,7 @@ for f in tqdm(F_JPG):
         continue
 
     js['faces'] = classify(f)
-    print(json.dumps(js['faces'], indent=2))
+    #print(json.dumps(js['faces'], indent=2))
 
     with open(f_json, 'w') as FOUT:
         text = json.dumps(js)
