@@ -51,8 +51,8 @@ def compute_single(
     return img[0]
 
 
-k0 = 10
-k1 = 938
+k0 = 34
+k1 = 49
 load_info = 'examples/info'
 
 f_info = os.path.join(load_info, f"{k0:06d}.json")

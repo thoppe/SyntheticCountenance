@@ -56,9 +56,13 @@ os.system(f'mkdir -p {save_dest_imgs}')
 os.system(f'mkdir -p {save_dest_info}')
 
 for n in tqdm(range(10000)):
+    f_save = os.path.join(save_dest_imgs, f"{n:06d}.jpg")
+    if os.path.exists(f_save):
+        continue
+    
     img, ds, z = compute_single(Gs, D)
 
-    f_save = os.path.join(save_dest_imgs, f"{n:06d}.jpg")
+    
     P_img = Image.fromarray(img)
     P_img.save(f_save)
 
