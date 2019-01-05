@@ -20,8 +20,6 @@ f_gender = 'trained_models/gender_models/simple_CNN.81-0.96.hdf5'
 emotion_labels = get_labels('fer2013')
 gender_labels = get_labels('imdb')
 
-print(emotion_labels, gender_labels)
-
 # hyper-parameters for bounding boxes shape
 gender_offsets = (30, 60)
 gender_offsets = (10, 10)
@@ -38,7 +36,7 @@ emotion_target_size = emotion_classifier.input_shape[1:3]
 gender_target_size = gender_classifier.input_shape[1:3]
 
 
-def process_image(f_image):
+def classify(f_image):
 
     rgb_image = load_image(f_image, grayscale=False)
     gray_image = load_image(f_image, grayscale=True)
@@ -93,6 +91,6 @@ def process_image(f_image):
 if __name__ == "__main__":
     f_image = '000260.jpg'
 
-    res = process_image(f_image)
+    res = classify(f_image)
     print(res)
     print(json.dumps(res,indent=2))
