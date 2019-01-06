@@ -13,17 +13,18 @@ for f in tqdm(F_JPG):
         print(f"Removing {f}")
         os.remove(f)
         continue
-    
+        
     with open(f_json) as FIN:
-        js = json.loads(FIN.read())
+        try:
+            js = json.loads(FIN.read())
+        except json.decoder.JSONDecodeError:
+            print(f"Problem with json, removing {f}")
+            os.remove(f)            
+            continue
 
     if 'faces' in js:
         continue
 
     js['faces'] = classify(f)
-
-    with open(f_json, 'w') as FOUT:
-        text = json.dumps(js)
-        FOUT.write(text)
 
     print(f)

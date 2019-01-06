@@ -1,6 +1,8 @@
 import pandas as pd
+from tqdm import tqdm
+import numpy as np
 import h5py
-import glob, json
+import glob, json, os
 
 f_h5 = 'latent_gender_and_emotion_training.h5'
 f_save_csv = 'latent_gender_and_emotion_training.csv'
@@ -10,10 +12,27 @@ F_INFO = glob.glob('../examples/info/*.json')
 data = []
 emotions = None
 Z = []
-for f in F_INFO:
-    with open(f) as FIN:
-        js = json.loads(FIN.read())
+keypoints = []
+
+for f_json in tqdm(F_INFO):
+
+            
+    with open(f_json) as FIN:
+        try:
+            js = json.loads(FIN.read())
+        except json.decoder.JSONDecodeError:
+            print(f"Problem with json, removing {f_json}")
+            os.remove(f_json)            
+            continue
+
     if 'faces' not in js:
+        continue
+
+    if 'keypoints' not in js:
+        continue
+
+    kp = js['keypoints']
+    if len(kp) != 68:
         continue
 
     faces = js['faces']
@@ -24,7 +43,8 @@ for f in F_INFO:
     face = faces[0]
 
     item = {'n':js['n']}
-    item['f_image'] = f.replace('/info/', '/imgs/').replace('.json', '.jpg')
+    item['f_image'] = f_json.replace(
+        '/info/', '/imgs/').replace('.json', '.jpg')
     
     item.update(dict(
         zip(face['gender_labels'].values(), face['gender_vector'][0])))
@@ -36,11 +56,16 @@ for f in F_INFO:
     data.append(item)
     Z.append(js['z'])
 
+    keypoints.append(np.array(kp))
+    
+
 df = pd.DataFrame(data).set_index('n')
 df.to_csv(f_save_csv)
 
 with h5py.File(f_h5, 'w') as h5:
     h5['Z'] = Z
+    h5['keypoints'] = keypoints
+    
     for key in ['man', 'woman'] + emotions:
         h5[key] = df[key].values
 
