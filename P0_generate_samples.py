@@ -55,7 +55,7 @@ save_dest_info = 'examples/info'
 os.system(f'mkdir -p {save_dest_imgs}')
 os.system(f'mkdir -p {save_dest_info}')
 
-for n in tqdm(range(100000)):
+for n in tqdm(range(1000000)):
     f_save = os.path.join(save_dest_imgs, f"{n:06d}.jpg")
     if os.path.exists(f_save):
         continue
