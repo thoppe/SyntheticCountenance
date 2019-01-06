@@ -4,18 +4,20 @@ import cv2
 from keras.models import load_model
 import numpy as np
 
-from utils.datasets import get_labels
-from utils.inference import detect_faces
-from utils.inference import draw_text
-from utils.inference import draw_bounding_box
-from utils.inference import apply_offsets
-from utils.inference import load_detection_model
-from utils.inference import load_image
-from utils.preprocessor import preprocess_input
+from .utils.datasets import get_labels
+from .utils.inference import detect_faces
+from .utils.inference import draw_text
+from .utils.inference import draw_bounding_box
+from .utils.inference import apply_offsets
+from .utils.inference import load_detection_model
+from .utils.inference import load_image
+from .utils.preprocessor import preprocess_input
 
-f_detection = 'trained_models/detection_models/haarcascade_frontalface_default.xml'
-f_emotion = 'trained_models/emotion_models/fer2013_mini_XCEPTION.102-0.66.hdf5'
-f_gender = 'trained_models/gender_models/simple_CNN.81-0.96.hdf5'
+model_dest = 'face_classification/trained_models'
+
+f_detection = f'{model_dest}/detection_models/haarcascade_frontalface_default.xml'
+f_emotion = f'{model_dest}/emotion_models/fer2013_mini_XCEPTION.102-0.66.hdf5'
+f_gender = f'{model_dest}/gender_models/simple_CNN.81-0.96.hdf5'
 
 emotion_labels = get_labels('fer2013')
 gender_labels = get_labels('imdb')
@@ -42,6 +44,8 @@ def classify(f_image):
     gray_image = load_image(f_image, grayscale=True)
     gray_image = np.squeeze(gray_image)
     gray_image = gray_image.astype('uint8')
+
+    print(rgb_image.shape)
 
     face_data = []
     

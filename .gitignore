@@ -3,3 +3,7 @@ examples/*
 
 # Don't save the model!
 model/karras2018iclr-celebahq-1024x1024.pkl
+
+# Caches
+*__pycache__*
+.python-version

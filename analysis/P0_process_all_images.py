@@ -1,9 +1,9 @@
 import os, json, glob
 from tqdm import tqdm
 import random
-from classify_image import classify
+from face_classification.classify_image import classify
 
-F_JPG = glob.glob('../../examples/imgs/*.jpg')
+F_JPG = glob.glob('../examples/imgs/*.jpg')
 random.shuffle(F_JPG)
 
 for f in tqdm(F_JPG):
@@ -21,7 +21,6 @@ for f in tqdm(F_JPG):
         continue
 
     js['faces'] = classify(f)
-    #print(json.dumps(js['faces'], indent=2))
 
     with open(f_json, 'w') as FOUT:
         text = json.dumps(js)
