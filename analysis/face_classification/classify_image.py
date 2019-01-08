@@ -45,12 +45,12 @@ def classify(f_image):
     gray_image = np.squeeze(gray_image)
     gray_image = gray_image.astype('uint8')
 
-    print(rgb_image.shape)
+    #print(rgb_image.shape)
 
     face_data = []
     
     faces = detect_faces(face_detection, gray_image)
-    print(faces)
+    #print(faces)
 
     for face_coordinates in faces:
         x1, x2, y1, y2 = apply_offsets(face_coordinates, gender_offsets)

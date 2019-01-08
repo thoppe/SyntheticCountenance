@@ -13,9 +13,11 @@ def load_model():
     import sys
     import pickle
 
-    config = tf.ConfigProto(allow_soft_placement=True)
+    config = tf.ConfigProto(allow_soft_placement=False)
+    #config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 0.45
     sess = tf.InteractiveSession(config=config)
-    config.gpu_options.allow_growth = True
+
 
     f_model = 'model/karras2018iclr-celebahq-1024x1024.pkl'
     path_pg_gan_code = 'src/model/pggan/'
