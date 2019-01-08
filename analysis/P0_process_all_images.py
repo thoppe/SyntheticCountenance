@@ -3,8 +3,8 @@ from tqdm import tqdm
 import random
 from face_classification.classify_image import classify
 
-F_JPG = glob.glob('../examples/imgs/*.jpg')
-random.shuffle(F_JPG)
+F_JPG = sorted(glob.glob('../examples/imgs/*.jpg'))
+#random.shuffle(F_JPG)
 
 for f in tqdm(F_JPG):
     f_json = f.replace('/imgs/', '/info/').replace('.jpg', '.json')

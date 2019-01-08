@@ -9,9 +9,9 @@ predictor = dlib.shape_predictor(
 
 detector = dlib.get_frontal_face_detector()
 
-F_JPG = glob.glob('../examples/imgs/*.jpg')
+F_JPG = sorted(glob.glob('../examples/imgs/*.jpg'))
 #random.seed(42)
-random.shuffle(F_JPG)
+#random.shuffle(F_JPG)
 
 for f in tqdm(F_JPG):
 
