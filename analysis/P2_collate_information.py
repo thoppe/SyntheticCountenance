@@ -65,6 +65,7 @@ df.to_csv(f_save_csv)
 with h5py.File(f_h5, 'w') as h5:
     h5['Z'] = Z
     h5['keypoints'] = keypoints
+    h5['n'] = df.index.values
     
     for key in ['man', 'woman'] + emotions:
         h5[key] = df[key].values
