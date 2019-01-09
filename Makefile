@@ -1,3 +1,5 @@
+.PHONY: samples features
+
 P2 = python P2_face_vectors.py
 P3 = python P3_keypoints.py
 
