@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import cv2, imutils, dlib
 from imutils import face_utils
 from src.pipeline import Pipeline
