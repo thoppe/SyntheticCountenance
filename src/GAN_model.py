@@ -5,14 +5,15 @@ from PIL import Image
 import os, json
 
 
+dim = 512
+
+
 def load_GAN_model():
     print("Loading the model")
 
     import tensorflow as tf
     import sys
     import pickle
-
-    dim = 512
 
     config = tf.ConfigProto(allow_soft_placement=False)
     config.gpu_options.allow_growth = True
