@@ -51,16 +51,22 @@ class Pipeline:
     def slow_call(self, func):
 
         for f0 in tqdm(self.ITR):
-
             f1 = self.get_output_file(f0)
+
             if os.path.exists(f1):
                 continue
 
-            if func(f0, f1) is False:
-                print("REMOVING", f0)
-                os.remove(f0)
+            func(f0, f1)
+
+            #if func(f0, f1) is False:
+            #    print("REMOVING", f0)
+            #    os.remove(f0)
 
     def __call__(self, func, CORES=-1):
+
+        if CORES == 1:
+            self.slow_call(func)
+            return True
 
         dfunc = joblib.delayed(func)
         with joblib.Parallel(CORES) as MP:

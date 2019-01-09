@@ -24,7 +24,7 @@ def compute(f_image, f_fvec):
     shape68 = shape68_pred(gray, rect)
     keypoints = np.array(face_utils.shape_to_np(shape68))
     
-    #np.save(f_fvec, keypoints)
+    np.save(f_fvec, keypoints)
 
 
 P = Pipeline(
