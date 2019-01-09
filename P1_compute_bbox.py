@@ -19,7 +19,7 @@ facerec = dlib.face_recognition_model_v1(
 '''
 
 
-def compute_bbox(f_image, f_npy, n_upsample=0):
+def compute(f_image, f_bbox, n_upsample=0):
 
     img = cv2.imread(f_image)
     faces = detector(img, n_upsample)
@@ -32,8 +32,8 @@ def compute_bbox(f_image, f_npy, n_upsample=0):
     bbox = [face.left(), face.top(), face.right(), face.bottom()]
     bbox = np.array(bbox)
 
-    #print(f"Computed bbox {f_npy}")
-    np.save(f_npy, bbox)
+    #print(f"Computed bbox {f_bbox}")
+    np.save(f_bbox, bbox)
 
     '''
     shape5 = shape5_pred(img, face)
@@ -67,5 +67,5 @@ P = Pipeline(
     load_dest = 'samples/images',
     save_dest = 'samples/bbox',
     new_extension = 'npy',
-)(compute_bbox)
+)(compute)
 
