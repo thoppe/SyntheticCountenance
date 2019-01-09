@@ -16,8 +16,14 @@ os.system(f'mkdir -p {save_dest_imgs}')
 os.system(f'mkdir -p {save_dest_info}')
 
 largest_known = glob.glob(os.path.join(save_dest_imgs, '*'))
-largest_known = os.path.basename(sorted(largest_known)[-1])
-largest_idx = int(largest_known.split('.')[0])
+largest_idx = 0
+
+if len(largest_known):
+    largest_known = os.path.basename(sorted(largest_known)[-1])
+    largest_idx = int(largest_known.split('.')[0])
+
+
+
 print("Starting generation")    
 
 for n in tqdm(range(largest_idx, max_images)):
