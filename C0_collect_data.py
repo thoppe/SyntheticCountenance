@@ -42,7 +42,7 @@ def collect_vectors(label):
 
     g = h5.require_group(label)
     g['image_idx'] = image_idx
-    g[label] = X
+    g['data'] = X
 
 
 f_h5 = 'samples/PGAN_attributes.h5'
