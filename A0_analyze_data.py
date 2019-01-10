@@ -19,7 +19,7 @@ key ='laplacian_variance'
 df = df.sort_values(key)
 
 import pixelhouse as ph
-C = ph.Canvas()
+
 
 # Laplacian_variance
 # 250 is a good maximum
@@ -27,15 +27,20 @@ C = ph.Canvas()
 # Malformed faces at < 17
 
 
-for n in df.index[::-1][::200]:
+for n in df.index[::1][::]:
+    
+    if np.random.uniform()<.1:
+        continue
+
     f_img = f'samples/images/{n:06d}.jpg'
     if not os.path.exists(f_img):
         continue
-
+    C = ph.Canvas()
     C.load(f_img)
 
     #text=str(np.round(df.loc[n, key]))
-    text=str(np.round(df.loc[n, key], 3))
+    #text=str(np.round(df.loc[n, key], 3))
+    text=str(n)
     
     C += ph.text(
         x=2, y=-2,
@@ -46,3 +51,4 @@ for n in df.index[::-1][::200]:
             
     print(n)
 
+# 662
