@@ -14,3 +14,4 @@ features:
 	$(P2) & $(P2) & $(P2) & $(P2) & $(P2) & $(P2) & $(P2) & $(P2)
 	$(P3) & $(P3)
 	python P4_image_attribs.py
+	python C0_collect_data.py

@@ -17,7 +17,10 @@ def collect_attributes():
     df = pd.DataFrame(data).sort_values('name').set_index('name')
 
     label = 'image_attributes'
-    del h5[label]
+
+    if label in h5:
+        del h5[label]
+
     g = h5.require_group(label)
 
     g['image_idx'] = df.index.values
