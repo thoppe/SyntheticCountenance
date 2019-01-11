@@ -8,7 +8,7 @@ import os, json
 dim = 512
 
 
-def load_GAN_model():
+def load_GAN_model(return_sess=False):
     print("Loading the model")
 
     import tensorflow as tf
@@ -27,7 +27,11 @@ def load_GAN_model():
     with open(f_model, 'rb') as FIN:
         G, D, Gs = pickle.load(FIN)
 
-    return G, D, Gs
+    if not return_sess:
+        return G, D, Gs
+
+    return G, D, Gs, sess
+    
 
 def generate_single(
         generator, discriminator, z=None, compute_discriminator=True):
