@@ -54,10 +54,18 @@ def generate_single(
     else:
         ds = None
 
+    img = raw_GAN_image_to_RGB(img[0])
+    return img, z, ds
+
+def raw_GAN_output_to_RGB(img):
+
     # [-1,1] => [0,255]
     img = np.clip(np.rint(
         (img + 1.0) / 2.0 * 255.0), 0.0, 255.0).astype(np.uint8)
 
     img = img.transpose(0, 2, 3, 1)  # NCHW => NHWC
+    return img
 
-    return img[0], z, ds
+def RBG_to_GAN_output(img):
+    
+
