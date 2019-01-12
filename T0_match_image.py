@@ -5,12 +5,12 @@ import tensorflow as tf
 from src.GAN_model import load_GAN_model
 from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 
-
 class GeneratorInverse:
 
     def __init__(self, generator, sess, learning_rate=0.01):
 
         self.sess = sess
+        self.target_image = None
 
         latent_dim = 512
         image_dim = 1024
@@ -45,55 +45,69 @@ class GeneratorInverse:
         
         self.sess.run(
             tf.initializers.variables(self.opt.variables()))
+
+    def set_target(self, f_image):
+        '''
+        For now, can only load from a file.
+        '''
+        img = Image.open(f_image)
+        self.target_image = RGB_to_GAN_output(img)
+
+    def render(self, f_save=None):
+        '''
+        Renders the current latent vector into an image.
+        '''
+        z_current = self.sess.run(
+            self.z, feed_dict={self.img_in:self.target_image})
+
+        img = Gs.run(z_current, np.zeros([512,0]))
+        img = GAN_output_to_RGB(img)[0]
+
+        if f_save is not None:
+            P_img = Image.fromarray(img)        
+            P_img.save(f_save)
+
+        return img
         
-    def train(self, input_image_grid):
+    def train(self):
         '''
         For each training step make sure the raw image has been
         loaded with RGB_to_GAN_output. Returns the loss.
         '''
         
+        if self.target_image is None:
+            raise ValueError("must call .set_target(img) first!")            
+        
         outputs = [self.loss, self.train_op]
         lx,_ = self.sess.run(
-            outputs, feed_dict={self.img_in:input_image_grid})
+            outputs, feed_dict={self.img_in:self.target_image})
 
         return lx
     
 
 G, D, Gs, sess = load_GAN_model(return_sess=True)
-
 GI = GeneratorInverse(Gs, sess)
 GI.initialize()
-            
 
 
-# Load in the target image and bring it proper format
-# Open the image and scale it to [-1, 1] and CHW
-f_image = 'src/000260.jpg'
-img = Image.open(f_image)
-img_grid = RGB_to_GAN_output(img)
-
-#f_npy = 'samples/latent_vectors/000360.npy'
-#z0 = np.load(f_npy)
 
 print ("Starting training")
 
+f_image = 'celeb.jpg'
+GI.set_target(f_image)
+
+
 save_dest = 'training_demo'
+os.system(f'mkdir -p {save_dest}')
 
 for i in range(200000):
 
     if i%10==0:
 
-        z_current = sess.run(GI.z, feed_dict={GI.img_in:img_grid})
-        img = Gs.run(z_current, np.zeros([512,0]))
-
-        img = GAN_output_to_RGB(img)[0]
-        P_img = Image.fromarray(img)
-        f_save = f'{save_dest}/{i:05d}.jpg'
-
         if i == 0:
             os.system(f'rm -vf {save_dest}/*')
-        
-        P_img.save(f_save)
+            
+        GI.render(f'{save_dest}/{i:05d}.jpg')
 
-    loss = GI.train(img_grid)
-    print(i, loss)
+    loss = GI.train()
+    print(f"Epoch {i}, loss {loss:0.4f}")
