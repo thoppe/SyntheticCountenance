@@ -35,6 +35,7 @@ class GeneratorInverse:
         self.loss /= image_dim**2
     
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        #self.opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 
         # Only train the latent variable (hold the generator fixed!)
         self.train_op = self.opt.minimize(self.loss, var_list=[self.z,])
@@ -78,36 +79,34 @@ class GeneratorInverse:
         if self.target_image is None:
             raise ValueError("must call .set_target(img) first!")            
         
-        outputs = [self.loss, self.train_op]
-        lx,_ = self.sess.run(
+        outputs = [self.loss, self.z, self.train_op]
+        lx,z,_ = self.sess.run(
             outputs, feed_dict={self.img_in:self.target_image})
 
-        return lx
+        return lx,z
     
+np.random.seed(45)
 
 G, D, Gs, sess = load_GAN_model(return_sess=True)
-GI = GeneratorInverse(Gs, sess)
+GI = GeneratorInverse(Gs, sess, learning_rate=0.01)
 GI.initialize()
-
 
 
 print ("Starting training")
 
-f_image = 'celeb.jpg'
+f_image = 'samples/images/000360.jpg'
 GI.set_target(f_image)
 
 
 save_dest = 'training_demo'
-os.system(f'mkdir -p {save_dest}')
+os.system(f'rm -rvf {save_dest} && mkdir -p {save_dest}')
 
 for i in range(200000):
 
+    # Only save every 10 iterations
     if i%10==0:
-
-        if i == 0:
-            os.system(f'rm -vf {save_dest}/*')
-            
         GI.render(f'{save_dest}/{i:05d}.jpg')
 
-    loss = GI.train()
-    print(f"Epoch {i}, loss {loss:0.4f}")
+    loss, z = GI.train()
+    norm = np.linalg.norm(z)/np.sqrt(512)
+    print(f"Epoch {i}, loss {loss:0.4f}, z-norm {norm:0.4f}")
