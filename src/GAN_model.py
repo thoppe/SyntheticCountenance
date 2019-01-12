@@ -57,7 +57,7 @@ def generate_single(
     img = raw_GAN_image_to_RGB(img[0])
     return img, z, ds
 
-def raw_GAN_output_to_RGB(img):
+def GAN_output_to_RGB(img):
 
     # [-1,1] => [0,255]
     img = np.clip(np.rint(
@@ -66,6 +66,12 @@ def raw_GAN_output_to_RGB(img):
     img = img.transpose(0, 2, 3, 1)  # NCHW => NHWC
     return img
 
-def RBG_to_GAN_output(img):
+def RGB_to_GAN_output(img):
+    batch_size = 1
     
+    img = np.array(img).transpose(2,0,1).astype(float)
+    img = 2*(img/255.0) - 1
+    grid = np.tile(img, (batch_size, 1, 1, 1))
+
+    return grid
 
