@@ -8,10 +8,13 @@ print(f"dlib CUDA status: {dlib.DLIB_USE_CUDA}")
 model_dest = 'model/dlib'
 detector = dlib.get_frontal_face_detector()
 
+def compute_bbox(img, n_upsample=0):
+    return detector(img, n_upsample)
+
 def compute(f_image, f_bbox, n_upsample=0):
 
     img = cv2.imread(f_image)
-    faces = detector(img, n_upsample)
+    faces = compute_bbox(img, n_upsample)
 
     if len(faces) != 1:
         print(f"REMOVING: {f_image}, {len(faces)} faces detected.")
@@ -24,10 +27,10 @@ def compute(f_image, f_bbox, n_upsample=0):
     #print(f"Computed bbox {f_bbox}")
     np.save(f_bbox, bbox)
 
-
-P = Pipeline(
-    load_dest = 'samples/images',
-    save_dest = 'samples/bbox',
-    new_extension = 'npy',
-)(compute, -1)
+if __name__ == "__main__":
+    P = Pipeline(
+        load_dest = 'samples/images',
+        save_dest = 'samples/bbox',
+        new_extension = 'npy',
+    )(compute, -1)
 

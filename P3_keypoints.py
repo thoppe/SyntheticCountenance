@@ -8,7 +8,7 @@ model_dest = 'model/dlib'
 shape68_pred = dlib.shape_predictor(
     f'{model_dest}/shape_predictor_68_face_landmarks.dat')
 
-def compute_keypoints(bbox, img):
+def compute_keypoints(img, bbox):
     
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     shape68 = shape68_pred(gray, bbox)
@@ -28,7 +28,7 @@ def compute(f_image, f_fvec):
     coords = np.load(f_bbox)
     bbox = dlib.rectangle(*coords)
 
-    keypoints = compute_keypoints(bbox, img)
+    keypoints = compute_keypoints(img, bbox)
 
     np.save(f_fvec, keypoints)
 

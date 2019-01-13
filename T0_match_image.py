@@ -5,21 +5,49 @@ import tensorflow as tf
 from src.GAN_model import load_GAN_model
 from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 
+from P3_keypoints import compute_keypoints
+from P1_compute_bbox import compute_bbox
+
+import cv2
+import scipy.spatial
+
+def compute_convex_hull_face(img):
+    ''' Assume img is loaded from cv2.imread '''
+    
+    bbox = compute_bbox(img)
+    assert(len(bbox)==1)
+    
+    keypoints = compute_keypoints(img, bbox[0])
+    hull = cv2.convexHull(keypoints)
+    mask = np.zeros(img.shape,np.uint8)
+
+    cv2.drawContours(mask,[hull],0, 1, -1)
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(10,10))
+    mask = cv2.dilate(mask, kernel, iterations = 1)  
+    mask = mask.astype(bool)[:, :, 0]
+    
+    return mask
+
+
 class GeneratorInverse:
 
-    def __init__(self, generator, sess, learning_rate=0.01):
+    def __init__(
+            self, generator, sess, learning_rate=0.01, use_mask=True):
 
         self.sess = sess
         self.target_image = None
+        self.use_mask = use_mask
 
         latent_dim = 512
         image_dim = 1024
         batch_size = 1
 
         # Start with random init for the latents
-        z_init = np.random.randn(latent_dim)
-        self.z = tf.Variable(z_init[None, :], dtype=tf.float32)
-
+        z_init = np.random.randn(latent_dim)[None, :]
+        self.z = tf.Variable(z_init, dtype=tf.float32)
+        self.mask = tf.placeholder(dtype=tf.float32)
+        
         # Labels are not needed for this project
         label_dummy = tf.zeros([batch_size,0])
     
@@ -31,11 +59,22 @@ class GeneratorInverse:
             tf.float32, shape=(batch_size, 3, image_dim, image_dim))
 
         # L1 error, only train the loss
-        self.loss = tf.reduce_sum(tf.abs(G_out - self.img_in))
-        self.loss /= image_dim**2
+        L1_loss = tf.abs(G_out - self.img_in)
+
+        # Sum over the batch_size, channel info
+        L1_loss = tf.reduce_sum(L1_loss, axis=0)
+        L1_loss = tf.reduce_sum(L1_loss, axis=0)
+
+        # Sum over all pixels
+        if use_mask:
+            L1_loss *= self.mask
+        
+        self.loss = tf.reduce_sum(L1_loss)
+        self.loss /= tf.reduce_sum(self.mask)
     
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
-        #self.opt = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+        #self.opt = tf.train.GradientDescentOptimizer(
+        #learning_rate=learning_rate)
 
         # Only train the latent variable (hold the generator fixed!)
         self.train_op = self.opt.minimize(self.loss, var_list=[self.z,])
@@ -51,15 +90,33 @@ class GeneratorInverse:
         '''
         For now, can only load from a file.
         '''
-        img = Image.open(f_image)
+
+        if self.use_mask:
+            # Load a mask (all CV2 operations)
+            cv_img = cv2.imread(f_image)
+            mask = compute_convex_hull_face(cv_img)
+            self.target_mask = np.ones_like(mask)
+            
+            # Set values off the mask to still be important
+            self.target_mask[~mask] = 0.25
+        else:
+            # Debug line
+            self.target_mask = np.ones((1024, 1024))
+
+        # Load the target image
+        img = Image.open(f_image)        
         self.target_image = RGB_to_GAN_output(img)
+
 
     def render(self, f_save=None):
         '''
         Renders the current latent vector into an image.
         '''
         z_current = self.sess.run(
-            self.z, feed_dict={self.img_in:self.target_image})
+            self.z, feed_dict={
+                self.img_in:self.target_image,
+                self.mask:self.target_mask,
+            })
 
         img = Gs.run(z_current, np.zeros([512,0]))
         img = GAN_output_to_RGB(img)[0]
@@ -81,7 +138,10 @@ class GeneratorInverse:
         
         outputs = [self.loss, self.z, self.train_op]
         lx,z,_ = self.sess.run(
-            outputs, feed_dict={self.img_in:self.target_image})
+            outputs, feed_dict={
+                self.img_in:self.target_image,
+                self.mask:self.target_mask,
+            })
 
         return lx,z
     
@@ -109,4 +169,5 @@ for i in range(200000):
 
     loss, z = GI.train()
     norm = np.linalg.norm(z)/np.sqrt(512)
+    print(loss, type(loss))
     print(f"Epoch {i}, loss {loss:0.4f}, z-norm {norm:0.4f}")
