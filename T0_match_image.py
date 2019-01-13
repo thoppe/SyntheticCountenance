@@ -88,7 +88,7 @@ class GeneratorInverse:
 np.random.seed(45)
 
 G, D, Gs, sess = load_GAN_model(return_sess=True)
-GI = GeneratorInverse(Gs, sess, learning_rate=0.01)
+GI = GeneratorInverse(Gs, sess, learning_rate=.01)
 GI.initialize()
 
 
@@ -98,7 +98,7 @@ f_image = 'samples/images/000360.jpg'
 GI.set_target(f_image)
 
 
-save_dest = 'training_demo'
+save_dest = 'samples/match_image'
 os.system(f'rm -rvf {save_dest} && mkdir -p {save_dest}')
 
 for i in range(200000):
