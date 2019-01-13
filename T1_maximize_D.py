@@ -10,11 +10,16 @@ import os, json, glob
 import tensorflow as tf
 from src.GAN_model import load_GAN_model
 from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
+#from color_transfer import color_transfer
 
 class MaximizeDiscriminator:
 
     def __init__(
-            self, discriminator, sess, learning_rate=0.01, f_img=None):
+            self, discriminator, sess, learning_rate=0.01,
+            find_most_likely=True,
+            blend=0.0,
+            f_img=None
+    ):
 
         self.sess = sess
 
@@ -33,12 +38,23 @@ class MaximizeDiscriminator:
 
         self.img = tf.Variable(
             img0[None, :, :, :], dtype=tf.float32)
+
+        self.img_org = tf.Variable(
+            img0[None, :, :, :], dtype=tf.float32)
         
         D_scores, D_labels = discriminator.get_output_for(
             self.img, is_training=False)
 
         score = tf.reduce_sum(D_scores)
-        self.loss = -score
+
+        if find_most_likely:
+            self.loss = -score
+        else:
+            self.loss = score
+
+        if blend:
+            self.loss += tf.reduce_sum(tf.abs(self.img_org - self.img))
+            
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         
         # Only train the latent variable (hold the generator fixed!)
@@ -46,7 +62,7 @@ class MaximizeDiscriminator:
 
     def initialize(self):
         self.sess.run(
-            tf.initializers.variables([self.img,]))
+            tf.initializers.variables([self.img,self.img_org]))
         
         self.sess.run(
             tf.initializers.variables(self.opt.variables()))
@@ -69,16 +85,21 @@ class MaximizeDiscriminator:
         For each training step make sure the raw image has been
         loaded with RGB_to_GAN_output. Returns the loss.
         '''        
-        outputs = [self.loss, self.train_op]
-        lx,_ = self.sess.run(outputs)
-        return lx
+        outputs = [self.loss, self.train_op, self.img]
+        lx,_,img = self.sess.run(outputs)
+        return lx, img
 
-#f_img = 'samples/images/000360.jpg'
-f_img = None
+f_img = 'samples/images/000036.jpg'
+img0 = np.array(Image.open(f_img))
+#f_img = None
     
 #np.random.seed(45)
 G, D, Gs, sess = load_GAN_model(return_sess=True)
-MD = MaximizeDiscriminator(D, sess, learning_rate=0.1, f_img=f_img)
+MD = MaximizeDiscriminator(
+    D, sess, f_img=f_img, learning_rate=0.01,
+    find_most_likely=True,
+    blend=0.00001,
+)
 
 MD.initialize()
 
@@ -91,9 +112,19 @@ for i in range(200000):
 
     # Only save every 10 iterations
     if i%10==0:
+
+        # Doesn't work
+        #if i:
+        #    # Try to color match to the original each time
+        #    img1 = GAN_output_to_RGB(gimg)[0]
+        #    img2 = color_transfer(img0, img1)
+        #    gimg2 = RGB_to_GAN_output(img2)
+        #    MD.img.load(gimg2, sess)
+        
         MD.render(f'{save_dest}/{i:05d}.jpg')
 
-    loss = MD.train()
+    loss, gimg = MD.train()
     print(f"Epoch {i}, loss {loss:0.4f}")
+
 
     
