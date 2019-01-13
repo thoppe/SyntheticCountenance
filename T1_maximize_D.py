@@ -13,7 +13,8 @@ from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 
 class MaximizeDiscriminator:
 
-    def __init__(self, discriminator, sess, learning_rate=0.01):
+    def __init__(
+            self, discriminator, sess, learning_rate=0.01, f_img=None):
 
         self.sess = sess
 
@@ -21,18 +22,23 @@ class MaximizeDiscriminator:
         image_dim = 1024
         batch_size = 1
         
-        # Start with random init for the latents
-        img0 = np.random.uniform(
-            -1, 1, size=[3, image_dim, image_dim])
+        # Use random input if none is given
+        if f_img is None:
+            img0 = np.random.uniform(
+                -1, 1, size=[3, image_dim, image_dim])
+        else:
+            np_img = np.array(Image.open(f_img))
+            img0 = RGB_to_GAN_output(np_img)
+            img0 = np.squeeze(img0, axis=0)
 
         self.img = tf.Variable(
             img0[None, :, :, :], dtype=tf.float32)
-
         
         D_scores, D_labels = discriminator.get_output_for(
             self.img, is_training=False)
 
-        self.loss = tf.reduce_sum(D_scores)
+        score = tf.reduce_sum(D_scores)
+        self.loss = -score
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         
         # Only train the latent variable (hold the generator fixed!)
@@ -44,14 +50,6 @@ class MaximizeDiscriminator:
         
         self.sess.run(
             tf.initializers.variables(self.opt.variables()))
-
-    def set_target(self, f_image):
-        '''
-        For now, can only load from a file.
-        '''        
-        np_img = np.array(Image.open(f_img))
-        self.target_img = RGB_to_GAN_output(np_img)
-
 
     def render(self, f_save=None):
         '''
@@ -75,13 +73,13 @@ class MaximizeDiscriminator:
         lx,_ = self.sess.run(outputs)
         return lx
 
-f_img = 'samples/images/000360.jpg'
+#f_img = 'samples/images/000360.jpg'
+f_img = None
     
-np.random.seed(45)
+#np.random.seed(45)
 G, D, Gs, sess = load_GAN_model(return_sess=True)
-MD = MaximizeDiscriminator(D, sess, learning_rate=0.01)
+MD = MaximizeDiscriminator(D, sess, learning_rate=0.1, f_img=f_img)
 
-MD.set_target(f_img)
 MD.initialize()
 
 print ("Starting training")
