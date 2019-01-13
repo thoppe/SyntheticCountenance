@@ -47,9 +47,10 @@ image_idx = h5['face_vectors']['image_idx'][...]
 clf = latent_face_model()
 
 #f_demo = 'src/000260.jpg'
-f_demo = '/home/travis/Desktop/20170702_171733.jpg'
+#f_demo = '/home/travis/Desktop/20170702_171733.jpg'
 #f_demo = '/home/travis/Desktop/the-10-most-talked-about-celebrities-during-the-grammys.jpg'
 #f_demo = '/home/travis/Desktop/girl-glowing-skin-blue-eyes.jpg'
+f_demo = 'hoppe.jpg'
 
 
 y = clf(f_demo)
@@ -63,6 +64,7 @@ A = ph.Canvas().load(f_demo)
 A.show()
 
 for n in image_idx[idx][:5]:
+    print(n)
     f_closest = f'samples/images/{n:06d}.jpg'
     assert(os.path.exists(f_closest))
     B = ph.Canvas().load(f_closest)
@@ -70,6 +72,4 @@ for n in image_idx[idx][:5]:
 
 #ph.hstack([A, B]).show()
 
-
-print(v)
 

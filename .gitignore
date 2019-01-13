@@ -1,5 +1,7 @@
 *~
 samples/*
+saved/*
+logs/*
 
 # Don't save the model!
 model/karras2018iclr-celebahq-1024x1024.pkl

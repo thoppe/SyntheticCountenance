@@ -58,8 +58,8 @@ if __name__ == "__main__":
     collect_attributes()
     collect_vectors('face_vectors')
     collect_vectors('latent_vectors')
-    collect_vectors('keypoints')
-
+    collect_vectors('keypoints_68')
+    collect_vectors('keypoints_5')
 
 
 

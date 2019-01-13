@@ -5,7 +5,7 @@ import tensorflow as tf
 from src.GAN_model import load_GAN_model
 from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 
-from P3_keypoints import compute_keypoints
+from P3_keypoints_68 import compute_keypoints
 from P1_compute_bbox import compute_bbox
 
 import cv2
@@ -21,7 +21,7 @@ def compute_convex_hull_face(img):
     hull = cv2.convexHull(keypoints)
     mask = np.zeros(img.shape,np.uint8)
 
-    cv2.drawContours(mask,[hull],0, 1, -1)
+    cv2.drawContours(mask,[hull], 0, 1, -1)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(10,10))
     mask = cv2.dilate(mask, kernel, iterations = 1)  
@@ -33,7 +33,9 @@ def compute_convex_hull_face(img):
 class GeneratorInverse:
 
     def __init__(
-            self, generator, sess, learning_rate=0.01, use_mask=True):
+            self, generator, sess, learning_rate=0.01, use_mask=True,
+            z_init=None,
+    ):
 
         self.sess = sess
         self.target_image = None
@@ -43,8 +45,10 @@ class GeneratorInverse:
         image_dim = 1024
         batch_size = 1
 
-        # Start with random init for the latents
-        z_init = np.random.randn(latent_dim)[None, :]
+        if z_init is None:
+            # Start with random init for the latents
+            z_init = np.random.randn(latent_dim)[None, :]
+        
         self.z = tf.Variable(z_init, dtype=tf.float32)
         self.mask = tf.placeholder(dtype=tf.float32)
         
@@ -69,7 +73,7 @@ class GeneratorInverse:
         if use_mask:
             L1_loss *= self.mask
         
-        self.loss = tf.reduce_sum(L1_loss)
+        self.loss = tf.reduce_sum(L1_loss**2)
         self.loss /= tf.reduce_sum(self.mask)
     
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
@@ -125,6 +129,9 @@ class GeneratorInverse:
             P_img = Image.fromarray(img)        
             P_img.save(f_save)
 
+            f_npy = f_save.replace('.jpg', '.npy')
+            np.save(f_npy, z_current)
+
         return img
         
     def train(self):
@@ -146,15 +153,17 @@ class GeneratorInverse:
         return lx,z
     
 np.random.seed(45)
+z_init = np.load('samples/latent_vectors/032548.npy')[None, :]
 
 G, D, Gs, sess = load_GAN_model(return_sess=True)
-GI = GeneratorInverse(Gs, sess, learning_rate=.01)
+GI = GeneratorInverse(Gs, sess, learning_rate=.005, z_init=z_init)
 GI.initialize()
 
 
 print ("Starting training")
 
-f_image = 'samples/images/000360.jpg'
+#f_image = 'samples/images/000360.jpg'
+f_image = 'hoppe.jpg'
 GI.set_target(f_image)
 
 
