@@ -5,7 +5,7 @@ from PIL import Image
 import os, json, glob
 from src.GAN_model import load_GAN_model, generate_single
 
-n_samples = 10 ** 2
+n_samples = 10 ** 6
 
 G, D, Gs = load_GAN_model()
 save_dest_imgs = "samples/images"

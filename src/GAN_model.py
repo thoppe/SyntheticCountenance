@@ -67,7 +67,8 @@ def generate_single(generator, discriminator, z=None, compute_discriminator=True
     else:
         ds = None
 
-    img = raw_GAN_image_to_RGB(img[0])
+    img = GAN_output_to_RGB(img)[0]
+
     return img, z, ds
 
 
