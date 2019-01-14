@@ -3,10 +3,14 @@ import pandas as pd
 from tqdm import tqdm
 from PIL import Image
 import os, json
-
+import coloredlogs
+import logging
+coloredlogs.install(level='DEBUG')
 
 dim = 512
 
+# Create a logger object.
+logger = logging.getLogger(__name__)
 
 def load_GAN_model(return_sess=False):
     print("Loading the model")
@@ -19,11 +23,21 @@ def load_GAN_model(return_sess=False):
     config.gpu_options.allow_growth = True
     # config.gpu_options.per_process_gpu_memory_fraction = 0.45
     sess = tf.InteractiveSession(config=config)
+    
+    if not tf.test.is_gpu_available():
+        logger.error(
+            f"The PGAN model requires a GPU (some instructions do not work on CPU)")
+        raise NotImplementedError
 
     f_model = "model/karras2018iclr-celebahq-1024x1024.pkl"
     path_pg_gan_code = "src/model/pggan/"
 
     sys.path.append(path_pg_gan_code)
+
+    if not os.path.exists(f_model):
+        logger.error(f"Can't find model file {f_model}, use README to find download link.")
+        raise(FileNotFoundError)
+    
     with open(f_model, "rb") as FIN:
         G, D, Gs = pickle.load(FIN)
 
