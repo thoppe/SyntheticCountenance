@@ -2,29 +2,24 @@ import os, glob, random
 from tqdm import tqdm
 import joblib
 
-class Pipeline:
 
+class Pipeline:
     def __init__(
-            self,
-            load_dest,
-            save_dest,
-            old_extension=None,
-            new_extension=None,
-            shuffle=True,
+        self, load_dest, save_dest, old_extension=None, new_extension=None, shuffle=True
     ):
 
         self.save_dest = save_dest
         self.load_dest = load_dest
         self.new_extension = new_extension
         self.old_extension = old_extension
-        
-        os.system(f'mkdir -p {save_dest}')
+
+        os.system(f"mkdir -p {save_dest}")
 
         old_glob = f"*.{old_extension}" if old_extension else "*"
-        new_glob = f"*.{new_extension}" if new_extension else "*"        
-        
+        new_glob = f"*.{new_extension}" if new_extension else "*"
+
         F_IN = glob.glob(os.path.join(load_dest, old_glob))
-        F_OUT= glob.glob(os.path.join(save_dest, new_glob))
+        F_OUT = glob.glob(os.path.join(save_dest, new_glob))
 
         F_IN = sorted(F_IN)
 
@@ -32,8 +27,7 @@ class Pipeline:
             random.shuffle(F_IN)
 
         F_OUT = set(F_OUT)
-        self.ITR = [
-            f for f in F_IN if self.get_output_file(f) not in F_OUT]
+        self.ITR = [f for f in F_IN if self.get_output_file(f) not in F_OUT]
 
     def __len__(self):
         return len(self.ITR)
@@ -41,10 +35,10 @@ class Pipeline:
     def get_output_file(self, f):
         base = os.path.basename(f)
         if self.new_extension:
-            base = base.split('.')[:-1]
-            base.append(f'{self.new_extension}')
-            
-            base = '.'.join(base)
+            base = base.split(".")[:-1]
+            base.append(f"{self.new_extension}")
+
+            base = ".".join(base)
 
             return os.path.join(self.save_dest, base)
 
@@ -58,7 +52,7 @@ class Pipeline:
 
             func(f0, f1)
 
-            #if func(f0, f1) is False:
+            # if func(f0, f1) is False:
             #    print("REMOVING", f0)
             #    os.remove(f0)
 

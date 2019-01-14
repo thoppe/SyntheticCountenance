@@ -5,11 +5,13 @@ from imutils import face_utils
 from src.pipeline import Pipeline
 
 print(f"dlib CUDA status: {dlib.DLIB_USE_CUDA}")
-model_dest = 'model/dlib'
+model_dest = "model/dlib"
 detector = dlib.get_frontal_face_detector()
+
 
 def compute_bbox(img, n_upsample=0):
     return detector(img, n_upsample)
+
 
 def compute(f_image, f_bbox, n_upsample=0):
 
@@ -24,13 +26,11 @@ def compute(f_image, f_bbox, n_upsample=0):
     bbox = [face.left(), face.top(), face.right(), face.bottom()]
     bbox = np.array(bbox)
 
-    #print(f"Computed bbox {f_bbox}")
+    # print(f"Computed bbox {f_bbox}")
     np.save(f_bbox, bbox)
+
 
 if __name__ == "__main__":
     P = Pipeline(
-        load_dest = 'samples/images',
-        save_dest = 'samples/bbox',
-        new_extension = 'npy',
+        load_dest="samples/images", save_dest="samples/bbox", new_extension="npy"
     )(compute, -1)
-
