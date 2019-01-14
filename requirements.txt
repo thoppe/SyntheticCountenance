@@ -1,0 +1,11 @@
+# Numerical
+numpy
+pandas
+# tensorflow-gpu
+
+# Helpers
+coloredlogs
+tqdm
+
+# Image
+PIL
