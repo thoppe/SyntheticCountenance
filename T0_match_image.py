@@ -5,7 +5,9 @@ import tensorflow as tf
 from src.GAN_model import load_GAN_model
 from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 
-from P3_keypoints_68 import compute_keypoints
+from P3_keypoints_68 import compute_keypoints as KEY68
+from P3_keypoints_5 import compute_keypoints as KEY5
+
 from P1_compute_bbox import compute_bbox
 
 import cv2
@@ -17,7 +19,7 @@ def compute_convex_hull_face(img):
     bbox = compute_bbox(img)
     assert(len(bbox)==1)
     
-    keypoints = compute_keypoints(img, bbox[0])
+    keypoints = KEY68(img, bbox[0])
     hull = cv2.convexHull(keypoints)
     mask = np.zeros(img.shape,np.uint8)
 
@@ -28,6 +30,36 @@ def compute_convex_hull_face(img):
     mask = mask.astype(bool)[:, :, 0]
     
     return mask
+
+def process_image(f_reference, f_image):
+    img0 = cv2.imread(f_reference)
+    bbox0 = compute_bbox(img0)
+    k0 = KEY68(img0, bbox0[0])
+
+    img1 = cv2.imread(f_image)
+    bbox1 = compute_bbox(img1)
+    k1 = KEY68(img1, bbox1[0])
+
+    # Find homography
+    #h, mask = cv2.findHomography(k1, k0, cv2.RANSAC)
+
+    # Find homography, use all the points
+    h, mask = cv2.findHomography(k0, k1, 0)
+ 
+    # Use homography
+    height, width, channels = img0.shape
+    img0x = cv2.warpPerspective(img1, h, (width, height))
+
+    cv2.imshow('img0', img0)
+    cv2.imshow('img0x', img0x)
+    cv2.imshow('img1', img1)
+    cv2.waitKey(0)
+
+    print(keypoints0, keypoints1)
+    exit()
+    
+   
+
 
 
 class GeneratorInverse:
@@ -161,9 +193,18 @@ GI.initialize()
 
 
 print ("Starting training")
+f_image = '/home/travis/Desktop/20170702_171733.jpg'
+f_reference = 'samples/images/000360.jpg'
+process_image(f_reference, f_image)
+exit()
 
-#f_image = 'samples/images/000360.jpg'
-f_image = 'hoppe.jpg'
+
+#f_image = 'hoppe.jpg'
+
+#exit()
+f_image = 'hoppe2.jpg'
+
+
 GI.set_target(f_image)
 
 
