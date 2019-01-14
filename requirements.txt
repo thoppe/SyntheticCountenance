@@ -6,6 +6,11 @@ pandas
 # Helpers
 coloredlogs
 tqdm
+joblib
 
 # Image
 Pillow
+opencv-python
+imutils
+dlib
+pixelhouse
