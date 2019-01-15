@@ -1,6 +1,8 @@
 # Numerical
 numpy
 pandas
+scipy
+sklearn
 # tensorflow-gpu
 
 # Helpers
@@ -14,4 +16,4 @@ opencv-python
 imutils
 dlib
 pixelhouse>=0.4.2
-sklearn
+
