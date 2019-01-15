@@ -7,11 +7,15 @@ from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 
 from P3_keypoints_68 import compute_keypoints as KEY68
 from P3_keypoints_5 import compute_keypoints as KEY5
+from E0_closest_vector import latent_face_model
 
 from P1_compute_bbox import compute_bbox
 
 import cv2
 import sklearn.decomposition
+
+np.random.seed(45)
+save_dest = "samples/match_image"
 
 def compute_convex_hull_face(img):
     """ Assume img is loaded from cv2.imread """
@@ -126,8 +130,6 @@ def process_image(f_reference, f_image):
 
     return img1
     
-   
-
 
 
 class GeneratorInverse:
@@ -244,14 +246,21 @@ class GeneratorInverse:
         return lx, z
 
 
-np.random.seed(45)
-z_init = np.load("samples/latent_vectors/000360.npy")[None, :]
-save_dest = "samples/match_image"
 
-#f_image = '/home/travis/Desktop/20170702_171733.jpg'
-f_image = '/home/travis/Desktop/Dw1uV7vWsAEuKwv.jpg'
-f_reference = 'samples/images/000360.jpg'
-f_processed = f"samples/match_target.jpg"
+
+
+#f_image = '/home/travis/Desktop/Dw1uV7vWsAEuKwv.jpg'
+f_image = '/home/travis/Desktop/hoppe.jpg'
+
+# Find the closest matching image as our starting conditions
+LFM = latent_face_model()
+n_reference = LFM.closest_index(f_image)[0]
+logger.info(
+    f"Image index {n_reference} has the closest matching facial features")
+
+
+z_init = np.load(f"samples/latent_vectors/{n_reference:06d}.npy")[None, :]
+f_reference = f'samples/images/{n_reference:06d}.jpg'
 
 G, D, Gs, sess = load_GAN_model(return_sess=True)
 GI = GeneratorInverse(Gs, sess, learning_rate=0.005, z_init=z_init)
@@ -260,6 +269,7 @@ GI.initialize()
 os.system(f"rm -rf {save_dest} && mkdir -p {save_dest}")
 
 # Preprocess the image
+f_processed = f"samples/match_target.jpg"
 img_process = process_image(f_reference, f_image)
 cv2.imwrite(f_processed, img_process)
 

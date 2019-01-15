@@ -18,6 +18,7 @@ class latent_face_model:
         )
 
         self.detector = dlib.get_frontal_face_detector()
+        self.V, self.image_idx = None, None
 
     def __call__(self, f_image, n_upsample=0):
 
@@ -38,38 +39,39 @@ class latent_face_model:
 
         return fv
 
+    def closest_index(self, f_image):
+        '''
+        Returns the closest images by facial features by reference
+        '''
 
-f_h5 = "samples/PGAN_attributes.h5"
-h5 = h5py.File(f_h5, "r")
+        if self.V is None:
+            f_h5 = "samples/PGAN_attributes.h5"
+            with h5py.File(f_h5, "r") as h5:
+                self.V = h5["face_vectors"]["data"][...]
+                self.image_idx = h5["face_vectors"]["image_idx"][...]
 
-V = h5["face_vectors"]["data"][...]
-image_idx = h5["face_vectors"]["image_idx"][...]
+        y = self(f_image)
+        dist = np.linalg.norm(self.V - y, ord=1, axis=1)
+        idx = np.argsort(dist)
 
-clf = latent_face_model()
+        return self.image_idx[idx]
 
-# f_demo = 'src/000260.jpg'
-# f_demo = '/home/travis/Desktop/20170702_171733.jpg'
-# f_demo = '/home/travis/Desktop/the-10-most-talked-about-celebrities-during-the-grammys.jpg'
-# f_demo = '/home/travis/Desktop/girl-glowing-skin-blue-eyes.jpg'
-f_demo = "hoppe.jpg"
+if __name__ == "__main__":
 
-
-y = clf(f_demo)
-
-dist = np.linalg.norm(V - y, ord=1, axis=1)
-idx = np.argsort(dist)
+    clf = latent_face_model()
+    
+    f_demo = '/home/travis/Desktop/Dw1uV7vWsAEuKwv.jpg'
+    idx = clf.closest_index(f_demo)
 
 
-import pixelhouse as ph
+    import pixelhouse as ph
 
-A = ph.Canvas().load(f_demo)
-A.show()
+    A = ph.Canvas().load(f_demo)
+    A.show()
 
-for n in image_idx[idx][:5]:
-    print(n)
-    f_closest = f"samples/images/{n:06d}.jpg"
-    assert os.path.exists(f_closest)
-    B = ph.Canvas().load(f_closest)
-    B.show()
-
-# ph.hstack([A, B]).show()
+    for n in idx[:5]:
+        print(n)
+        f_closest = f"samples/images/{n:06d}.jpg"
+        assert os.path.exists(f_closest)
+        B = ph.Canvas().load(f_closest)
+        B.show()
