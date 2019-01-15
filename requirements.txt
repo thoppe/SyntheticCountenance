@@ -13,4 +13,5 @@ Pillow
 opencv-python
 imutils
 dlib
-pixelhouse
+pixelhouse>=0.4.2
+sklearn

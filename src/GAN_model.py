@@ -13,7 +13,7 @@ dim = 512
 logger = logging.getLogger(__name__)
 
 def load_GAN_model(return_sess=False):
-    print("Loading the model")
+    logger.info("Loading the PGAN model")
 
     import tensorflow as tf
     import sys

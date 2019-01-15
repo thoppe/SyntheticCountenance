@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 import os, json, glob
 import tensorflow as tf
-from src.GAN_model import load_GAN_model
+from src.GAN_model import load_GAN_model, logger
 from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 
 from P3_keypoints_68 import compute_keypoints as KEY68
@@ -11,8 +11,7 @@ from P3_keypoints_5 import compute_keypoints as KEY5
 from P1_compute_bbox import compute_bbox
 
 import cv2
-import scipy.spatial
-
+import sklearn.decomposition
 
 def compute_convex_hull_face(img):
     """ Assume img is loaded from cv2.imread """
@@ -32,32 +31,100 @@ def compute_convex_hull_face(img):
 
     return mask
 
+def center_eyes(img):
+    
+    # From the keypoints around the eyes, make them on the x-axis
+    bbox = compute_bbox(img)
+    k1 = KEY68(img, bbox[0]).astype(np.float32)
+
+    vx = sklearn.decomposition.PCA(
+        n_components=1).fit(k1[36:48]).components_[0]
+    
+    theta = np.arctan2(vx[1], vx[0]) * (180.0/np.pi)
+    logger.info(f"Rotating input image by {theta:0.2f} degrees")
+
+    center = tuple(np.array([1024,1024])/2)
+    rot_mat = cv2.getRotationMatrix2D(center, theta, 1.0)
+    img_out = cv2.warpAffine(
+        img, rot_mat, (1024,1024),
+        borderMode=cv2.BORDER_REFLECT_101,
+    )
+
+    return img_out
+
+def align_to_eyes(img0, img1):
+    # Using the eye keypoints, find the optimal shift from img0 -> img1
+    
+    bbox0 = compute_bbox(img0)[0]
+    k0 = KEY68(img0, bbox0).astype(np.float32)
+
+    bbox1 = compute_bbox(img1)[0]
+    k1 = KEY68(img1, bbox1).astype(np.float32)
+    
+    # Get the average eye keypoints
+    left_eye0 = k0[36:42].mean(axis=0)
+    left_eye1 = k1[36:42].mean(axis=0)
+
+    right_eye0 = k0[42:48].mean(axis=0)
+    right_eye1 = k1[42:48].mean(axis=0)
+    
+    shift = np.array([
+        -(left_eye1 - left_eye0),
+        -(right_eye1 - right_eye0),
+    ]).mean(axis=0)
+
+    M = np.float32([[1,0,shift[0]],[0,1,shift[1]]])
+    logger.info(f"Shifting input image by {shift} pixels")
+    
+    img_out = cv2.warpAffine(
+        img1,M,(1024, 1024),
+        borderMode=cv2.BORDER_REFLECT_101
+    )
+
+    return img_out
+    
+    
 def process_image(f_reference, f_image):
+    # Align by the keypoints
+
     img0 = cv2.imread(f_reference)
-    bbox0 = compute_bbox(img0)
-    k0 = KEY68(img0, bbox0[0])
-
     img1 = cv2.imread(f_image)
-    bbox1 = compute_bbox(img1)
-    k1 = KEY68(img1, bbox1[0])
 
-    # Find homography
-    #h, mask = cv2.findHomography(k1, k0, cv2.RANSAC)
+    # Scale to the right size first
+    height, width = img1.shape[:2]
+    
+    if(height != width):
+        raise(ValueError("Input width must be height"))
+    
+    if((height,width) != (1024,1014)):
+        img1 = cv2.resize(img1, (1024, 1024))
 
-    # Find homography, use all the points
-    h, mask = cv2.findHomography(k0, k1, 0)
- 
-    # Use homography
-    height, width, channels = img0.shape
-    img0x = cv2.warpPerspective(img1, h, (width, height))
+    img1 = center_eyes(img1)
+    img1 = align_to_eyes(img0, img1)
 
-    cv2.imshow('img0', img0)
-    cv2.imshow('img0x', img0x)
-    cv2.imshow('img1', img1)
-    cv2.waitKey(0)
+    #bbox1 = compute_bbox(img1)[0]
+    #k1 = KEY68(img1, bbox1).astype(np.float32)
+    #for x,y in k1[36:48]:
+    #    cv2.circle(img1,(x,y), 3, (255,255,255), -1)
 
-    print(keypoints0, keypoints1)
-    exit()
+    #for x,y in k_old[36:48]:
+    #    cv2.circle(img1,(x,y), 3, (255,0,0), -1)
+    #bbox0 = compute_bbox(img0)[0]
+    #k0 = KEY68(img0, bbox0).astype(np.float32)
+    #for x,y in k0[36:48]:
+    #    cv2.circle(img1,(x,y), 3, (0,255,0), -1)
+    
+    # Blur around the face
+    mask = compute_convex_hull_face(img1)
+    img1[~mask] = cv2.blur(img1, (10,10))[~mask]
+    img1[~mask] = cv2.blur(img1, (10,10))[~mask]
+
+    #cv2.imshow('img0', img0)
+    #cv2.imshow('img1', img1)
+    #cv2.waitKey(0)
+    #exit()
+
+    return img1
     
    
 
@@ -178,38 +245,29 @@ class GeneratorInverse:
 
 
 np.random.seed(45)
-z_init = np.load("samples/latent_vectors/032548.npy")[None, :]
+z_init = np.load("samples/latent_vectors/000360.npy")[None, :]
+save_dest = "samples/match_image"
+
+#f_image = '/home/travis/Desktop/20170702_171733.jpg'
+f_image = '/home/travis/Desktop/Dw1uV7vWsAEuKwv.jpg'
+f_reference = 'samples/images/000360.jpg'
+f_processed = f"samples/match_target.jpg"
 
 G, D, Gs, sess = load_GAN_model(return_sess=True)
 GI = GeneratorInverse(Gs, sess, learning_rate=0.005, z_init=z_init)
 GI.initialize()
 
+os.system(f"rm -rf {save_dest} && mkdir -p {save_dest}")
 
-<<<<<<< HEAD
-print ("Starting training")
-f_image = '/home/travis/Desktop/20170702_171733.jpg'
-f_reference = 'samples/images/000360.jpg'
-process_image(f_reference, f_image)
-exit()
+# Preprocess the image
+img_process = process_image(f_reference, f_image)
+cv2.imwrite(f_processed, img_process)
 
-
-#f_image = 'hoppe.jpg'
-
-#exit()
-f_image = 'hoppe2.jpg'
+logger.info(f"Starting training against {f_processed}")
+GI.set_target(f_processed)
 
 
-print("Starting training")
-
-# f_image = 'samples/images/000360.jpg'
-f_image = "hoppe.jpg"
-GI.set_target(f_image)
-
-
-save_dest = "samples/match_image"
-os.system(f"rm -rvf {save_dest} && mkdir -p {save_dest}")
-
-for i in range(200_000):
+for i in range(20000):
 
     # Only save every 10 iterations
     if i % 10 == 0:
@@ -217,5 +275,4 @@ for i in range(200_000):
 
     loss, z = GI.train()
     norm = np.linalg.norm(z) / np.sqrt(512)
-    print(loss, type(loss))
-    print(f"Epoch {i}, loss {loss:0.4f}, z-norm {norm:0.4f}")
+    logger.debug(f"Epoch {i}, loss {loss:0.4f}, z-norm {norm:0.4f}")
