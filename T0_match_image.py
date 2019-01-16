@@ -16,11 +16,12 @@ import sklearn.decomposition
 
 np.random.seed(45)
 save_dest = "samples/match_image"
+n_image_upscale = 1
 
 def compute_convex_hull_face(img):
     """ Assume img is loaded from cv2.imread """
 
-    bbox = compute_bbox(img)
+    bbox = compute_bbox(img, n_image_upscale)
     assert(len(bbox)==1)
     
     keypoints = KEY68(img, bbox[0])
@@ -38,12 +39,20 @@ def compute_convex_hull_face(img):
 def center_eyes(img):
     
     # From the keypoints around the eyes, make them on the x-axis
-    bbox = compute_bbox(img)
+    bbox = compute_bbox(img, n_image_upscale)
     k1 = KEY68(img, bbox[0]).astype(np.float32)
 
     vx = sklearn.decomposition.PCA(
         n_components=1).fit(k1[36:48]).components_[0]
-    
+
+    # SVD does not determine the direction, but we have one
+    if vx[0] < 0:
+        vx *= -1
+    #for x,y in k1[36:48]:
+    #    cv2.circle(img,(x,y), 3, (255,255,255), -1)
+    #cv2.imshow('img', img)
+    #cv2.waitKey(0)
+
     theta = np.arctan2(vx[1], vx[0]) * (180.0/np.pi)
     logger.info(f"Rotating input image by {theta:0.2f} degrees")
 
@@ -59,10 +68,10 @@ def center_eyes(img):
 def align_to_eyes(img0, img1):
     # Using the eye keypoints, find the optimal shift from img0 -> img1
     
-    bbox0 = compute_bbox(img0)[0]
+    bbox0 = compute_bbox(img0, n_image_upscale)[0]
     k0 = KEY68(img0, bbox0).astype(np.float32)
 
-    bbox1 = compute_bbox(img1)[0]
+    bbox1 = compute_bbox(img1, n_image_upscale)[0]
     k1 = KEY68(img1, bbox1).astype(np.float32)
     
     # Get the average eye keypoints
@@ -94,12 +103,29 @@ def process_image(f_reference, f_image):
     img0 = cv2.imread(f_reference)
     img1 = cv2.imread(f_image)
 
-    # Scale to the right size first
     height, width = img1.shape[:2]
-    
+
+    # Center crop
     if(height != width):
-        raise(ValueError("Input width must be height"))
-    
+        logger.warning("Center cropping image")
+        idim = min(height, width)
+        delta = abs(height - width)
+        
+        if height > width:
+            if delta%2==0:
+                img1 = img1[delta//2:-delta//2,:]
+            else:
+                img1 = img1[delta//2:delta//2+1,:]
+        else:
+            if delta%2==0:
+                img1 = img1[:,delta//2:-delta//2]
+            else:
+                img1 = img1[:,delta//2:delta//2+1]
+
+        height, width = img1.shape[:2]
+        assert(height==width)
+
+    # Scale to the right size
     if((height,width) != (1024,1014)):
         img1 = cv2.resize(img1, (1024, 1024))
 
@@ -250,34 +276,55 @@ class GeneratorInverse:
 
 
 #f_image = '/home/travis/Desktop/Dw1uV7vWsAEuKwv.jpg'
-f_image = '/home/travis/Desktop/hoppe.jpg'
+#f_image = '/home/travis/Desktop/hoppe.jpg'
+#f_image = '/home/travis/Desktop/1_LYJ80Dx2rTnPvg7Kk0u4sA.jpg'
+#f_image = '/home/travis/Desktop/ChristinaF.jpg'
+f_image = '/home/travis/Desktop/rihanna.jpg'
 
-# Find the closest matching image as our starting conditions
-LFM = latent_face_model()
-n_reference = LFM.closest_index(f_image)[0]
-logger.info(
-    f"Image index {n_reference} has the closest matching facial features")
+latent_starting_offset = 0
 
+is_restart = False
+learning_rate = 0.01
 
-z_init = np.load(f"samples/latent_vectors/{n_reference:06d}.npy")[None, :]
-f_reference = f'samples/images/{n_reference:06d}.jpg'
+if not is_restart:
+    # Find the closest matching image as our starting conditions
+    LFM = latent_face_model()
+    n_reference = LFM.closest_index(f_image)[latent_starting_offset]
+    logger.info(
+        f"Image index {n_reference} has the closest matching facial features")
 
-G, D, Gs, sess = load_GAN_model(return_sess=True)
-GI = GeneratorInverse(Gs, sess, learning_rate=0.005, z_init=z_init)
-GI.initialize()
+    z_init = np.load(f"samples/latent_vectors/{n_reference:06d}.npy")[None, :]
+    f_reference = f'samples/images/{n_reference:06d}.jpg'
+    start_idx = 0
+    os.system(f"rm -rf {save_dest} && mkdir -p {save_dest}")
+    
+else:
+    import glob
+    f_z = sorted(glob.glob("samples/match_image/*.npy"))[-1]
+    z_init = np.load(f_z)
+    learning_rate /= 2
+    start_idx = int(os.path.basename(f_z).split('.')[0])
 
-os.system(f"rm -rf {save_dest} && mkdir -p {save_dest}")
 
 # Preprocess the image
 f_processed = f"samples/match_target.jpg"
-img_process = process_image(f_reference, f_image)
-cv2.imwrite(f_processed, img_process)
+
+if not is_restart:
+    img_process = process_image(f_reference, f_image)
+    cv2.imwrite(f_processed, img_process)
+
+
+
+
+G, D, Gs, sess = load_GAN_model(return_sess=True)
+GI = GeneratorInverse(Gs, sess, learning_rate=learning_rate, z_init=z_init)
+GI.initialize()
 
 logger.info(f"Starting training against {f_processed}")
 GI.set_target(f_processed)
 
 
-for i in range(20000):
+for i in range(start_idx, 20000):
 
     # Only save every 10 iterations
     if i % 10 == 0:

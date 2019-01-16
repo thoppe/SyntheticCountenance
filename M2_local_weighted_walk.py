@@ -50,8 +50,13 @@ if __name__ == "__main__":
 
     np.random.seed(43)
     
+    # z0, name = load_z("saved/AliS.npy")
+    # epsilon = 0.30
+    # n_transitions = 20
+
     z0, name = load_z(360)
-    z0, name = load_z("saved/AliS.npy")
+    epsilon = 0.40
+    n_transitions = 200
 
     G, D, Gs = load_GAN_model()
 
@@ -61,15 +66,13 @@ if __name__ == "__main__":
     os.system(f"rm -rf {save_dest} {save_dest_ref}")
     os.system(f"mkdir -p {save_dest} {save_dest_ref}")
 
-    epsilon = 0.30
-    n_transitions = 20
 
     # Vicinity sampling around the center
     delta = epsilon * np.random.standard_normal(size=(n_transitions - 1, 512))
 
     # Cherry-pick some bad samples away
-    for k in [12, 6, 0, 6, 6]:
-        delta[k] = np.random.standard_normal(size=(512,))
+    #for k in [12, 6, 0, 6, 6]:
+    #    delta[k] = np.random.standard_normal(size=(512,))
     
     Z = z0 + delta
 

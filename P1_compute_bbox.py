@@ -3,6 +3,7 @@ import os
 import cv2, imutils, dlib
 from imutils import face_utils
 from src.pipeline import Pipeline
+from src.GAN_model import logger
 
 print(f"dlib CUDA status: {dlib.DLIB_USE_CUDA}")
 model_dest = "model/dlib"
@@ -10,7 +11,10 @@ detector = dlib.get_frontal_face_detector()
 
 
 def compute_bbox(img, n_upsample=0):
-    return detector(img, n_upsample)
+    faces = detector(img, n_upsample)
+    if len(faces) != 1:
+        logger.warning(f"Found {len(faces)} faces in image! Expected one")
+    return faces
 
 
 def compute(f_image, f_bbox, n_upsample=0):
