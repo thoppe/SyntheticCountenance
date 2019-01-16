@@ -9,6 +9,7 @@ sklearn
 coloredlogs
 tqdm
 joblib
+docopt
 
 # Image
 Pillow
