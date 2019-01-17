@@ -1,107 +1,119 @@
 ---- .aligncenter .bg-white
-@unsplash(aY0g7ztFAQ8) .dark
+@unsplash(IWenq-4JHqo) .dark
 
-.text-data **Ars Metrica**
-.text-landing Prosody of Names
+.text-data **Synthetic Countenance**
+.text-landing Everything is fake
 
 @footer
  @h4 
  
  @div .wrap @div .span
-  @button(href="https://github.com/thoppe/ars_metrica") .alignleft .ghost
+  @button(href="https://github.com/thoppe/SyntheticCountenance") .alignleft .ghost
    ::github:: Talk repo
   @button(href="https://twitter.com/metasemantic") .ghost .alignright
    ::twitter:: @metasemantic
 
 ---- .aligncenter
-@unsplash(P8XV99FyzCk) .dark
+@unsplash(9ITUSJZRxP8) .dark
 
-.text-data **What's in a name?**
-.text-intro _culture, identity, history, ... _
+.text-data **GANs**
+## _generative adversarial networks_
+<br><br><br>
+
+## One really cool trick to generate synthetic samples.
+## Used [Progressive Growing of GANs](https://github.com/tkarras/progressive_growing_of_gans)
+## Celebrity dataset [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html)
+
+---- .aligncenter
+@unsplash(9ITUSJZRxP8) .dark
+
+# Crazy good results!
+<img src="figures/good/000161.jpg">
+<img src="figures/good/000165.jpg">
+<img src="figures/good/000169.jpg">
+<img src="figures/good/000017.jpg">
+<br>
+<img src="figures/good/000405.jpg">
+<img src="figures/good/000415.jpg">
+<img src="figures/good/000416.jpg">
+<img src="figures/good/000450.jpg">
+<br>
+Heads up, nobody here is real!
+
+---- .aligncenter
+@unsplash(9ITUSJZRxP8) .dark
+# even the failures are interesting!
+
+<img src="figures/bad/000286.jpg">
+<img src="figures/bad/000291.jpg">
+<img src="figures/bad/000302.jpg">
+<img src="figures/bad/000323.jpg">
+<br>
+<img src="figures/bad/000340.jpg">
+<img src="figures/bad/000349.jpg">
+<img src="figures/bad/000401.jpg">
+<img src="figures/bad/000402.jpg">
+<br>
+
+---- .bg-black .align-left  .slide-top
+@background_video(url="figures/sample_faces.mp4")
+# Sample faces "nearby"
+# use optimal transport!
 
 
 ---- .aligncenter
-@unsplash(SlBmEVU2y-A) .light
+@unsplash(9ITUSJZRxP8) .dark
 
-.text-data **Prosody**
-.text-intro _rhythm and sound used in poetry ... _
+.text-landing math math math math math math math math
+<br><br>
 
+## Normal generator (z gives an image)
+## $G(z) = I$
 
----- .bg-white .aligncenter 
-@unsplash(PaM7SD5wM6g) 
+<br><br>
+## What I wanted (get z from any image)
+## $G^{-1}(I) = z$
 
-
-.text-data **Olivia**
-.text-intro 18,632 times registered for a new [Social Security](https://www.ssa.gov/oact/babynames/) number in 2017
-.text-intro o-LIV-i-a, ``` /oʊˈlɪvi.ə/```
-
----- .aligncenter .bg-white
-@unsplash(aY0g7ztFAQ8) .dark
-
-
-@figure(src="figures/mean_syllables_per_year.png")
-@h1 America's polysyllabic growth
-
-@footer
-	.alignright Used [Prosodic](https://pypi.org/project/prosodic/)
+<br><br>
+## What I did (get z from a single image)
+## $F_{I}^{-1}(I) \approx z$
 
 
----- .aligncenter .bg-white
-@unsplash(aY0g7ztFAQ8) .dark
+---- .bg-black .align-left  .slide-top
+@background_video(url="figures/Ali_Spittel.mp4")
+#### Ali Spittel
+#### Formerly GA, now at Dev.to
+#### used with permission
 
-@figure(src="figures/syllables_per_year.png")
-@h1 Less `Will` and more `Alejandro`
+---- .bg-black .align-left  .slide-top
+@background_video(url="figures/ChristineFarr.mp4")
+#### Christina Farr
+#### Reporter at @CNBC.com
+#### used with permission
 
-----  .bg-white
-@unsplash(aY0g7ztFAQ8) .dark
-.wrap
-	@figure(src="figures/2_stress_patterns_per_year.png")
-```
-10: Mary, Linda, Susan
-01: Michelle, Kathleen, Nicole
-11: Joanne, Darlene, Colleen
-``` 
+---- .bg-black .align-left  .slide-top
+@background_video(url="figures/LuisFonsi.mp4")
+#### Luis Fonsi
+#### That guy from _Despacito_
+#### Public image
 
-----  .bg-white
-@unsplash(aY0g7ztFAQ8) .dark
-.wrap
-	@figure(src="figures/3_stress_patterns_per_year.png")
+---- .bg-black .align-left  .slide-top
+@background_video(url="figures/Rihanna.mp4")
+#### Rihanna
+#### 9-time Grammy winner
+#### and Barbadian Ambassador at-Large
+#### Public image
 
-```
-100: Jennifer, Barbara, Margaret
-010: Patricia, Amanda, Melissa
-101: Josephine, Caroline, Isabel
-110: Rosemary, Daniella, Paulina
-```
-
-----  .bg-white
-@unsplash(aY0g7ztFAQ8) .dark
-.wrap
-    @figure(src="figures/4_stress_patterns_per_year.png")
-```
-0100: Elizabeth, Victoria, Olivia
-1010: Isabella, Alexandra, Henrietta
-0010: Angelina, Gabriella, Lilliana
-```
-
-----  .bg-white
-@unsplash(aY0g7ztFAQ8) .dark
-.wrap
-  @h1 **Iambic pentameter names** <br><br>
-  @h1 Lucille Milan Loretta-Juliet
-  @h4 Lu **cille** Mi **lan** Lo **ret** ta- **Ju** li **et**
-
-----  .bg-white
-@unsplash(aY0g7ztFAQ8) .dark
-.wrap
-  @h1 **Iambic pentameter names**
-  @h1 Lucille Milan Loretta-Juliet
-  @h1 Michelle Adele Daniela-Abigail
-  @h1 Irene Kareem Sophia-Adelaide
-  @h1 Raquel Noelle Rodrigo-Rosalee
 ---- .aligncenter .bg-black
+@unsplash(9ITUSJZRxP8) .dark
+.text-data **y tho?**
 
-@unsplash(5IHz5WhosQE) 
+## Models are a reflection of data.
+## Explore the space to explore ourselves.
+## Black mirror vs White mirror.
+
+---- .aligncenter .bg-black
+@unsplash(IWenq-4JHqo) 
 
 .text-data **Thanks, you.**
 .text-intro  @button(href="https://twitter.com/metasemantic") .ghost ::twitter:: @metasemantic

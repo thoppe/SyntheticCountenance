@@ -63,11 +63,24 @@ if __name__ == "__main__":
 
     
     cargs = docopt(__doc__, version='GAN inverter 0.1')
+
     source_directory = cargs['<source_directory>']
 
-    F_Z = sorted(glob.glob(os.path.join(source_directory, '*.npy')))
-    name = os.path.dirname(source_directory).split('/')[-1]
-    z0 = np.load(F_Z[-1]).ravel()
+    try:
+        int(source_directory)
+        is_int = True
+    except:
+        is_int = False
+
+    if not is_int:
+        F_Z = sorted(glob.glob(os.path.join(source_directory, '*.npy')))
+        name = os.path.dirname(source_directory).split('/')[-1]
+        z0 = np.load(F_Z[-1]).ravel()
+    else:
+        f_z = f'samples/latent_vectors/{int(source_directory):06d}.npy'
+        name = source_directory
+        z0 = np.load(f_z).ravel()
+
 
     norm = np.linalg.norm(z0) / np.sqrt(len(z0))
     #z0 /= norm
