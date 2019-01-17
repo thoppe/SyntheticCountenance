@@ -1,3 +1,16 @@
+"""GAN movie loops
+
+Usage:
+  M2_local_weighted_walk.py <source_directory> [--n_transitions=<n>] [--epsilon=<f>] [--seed=<n>]
+
+Options:
+  -h --help     Show this screen.
+  --n_transitions=<n>  Number of faces to loop over [default: 20]
+  --epsilon=<f>  Distance to move from central face [default: 0.30]
+  --seed=<n>     Random seed [default: 42]
+"""
+from docopt import docopt
+
 import numpy as np
 from tqdm import tqdm
 from PIL import Image
@@ -48,15 +61,25 @@ def load_z(n):
 
 if __name__ == "__main__":
 
-    np.random.seed(43)
     
-    # z0, name = load_z("saved/AliS.npy")
-    # epsilon = 0.30
-    # n_transitions = 20
+    cargs = docopt(__doc__, version='GAN inverter 0.1')
+    source_directory = cargs['<source_directory>']
 
-    z0, name = load_z(360)
-    epsilon = 0.40
-    n_transitions = 200
+    F_Z = sorted(glob.glob(os.path.join(source_directory, '*.npy')))
+    name = os.path.dirname(source_directory).split('/')[-1]
+    z0 = np.load(F_Z[-1]).ravel()
+
+    norm = np.linalg.norm(z0) / np.sqrt(len(z0))
+    #z0 /= norm
+    
+    logger.info(f"Inital z norm {norm:0.4f}")
+
+    epsilon = float(cargs["--epsilon"])
+    n_transitions = int(cargs["--n_transitions"])
+    np.random.seed(int(cargs["--seed"]))    
+    #z0, name = load_z(360)
+    #epsilon = 0.40
+    #n_transitions = 200
 
     G, D, Gs = load_GAN_model()
 
@@ -65,7 +88,6 @@ if __name__ == "__main__":
 
     os.system(f"rm -rf {save_dest} {save_dest_ref}")
     os.system(f"mkdir -p {save_dest} {save_dest_ref}")
-
 
     # Vicinity sampling around the center
     delta = epsilon * np.random.standard_normal(size=(n_transitions - 1, 512))
