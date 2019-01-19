@@ -81,11 +81,17 @@ def GAN_output_to_RGB(img):
     return img
 
 
-def RGB_to_GAN_output(img):
+def RGB_to_GAN_output(img, resize=True):
     batch_size = 1
 
-    img = np.array(img).transpose(2, 0, 1).astype(float)
-    img = 2 * (img / 255.0) - 1
-    grid = np.tile(img, (batch_size, 1, 1, 1))
+    img = np.array(img)
+    if resize:
+        img = img.transpose(2, 0, 1)
 
-    return grid
+    img = img.astype(float)
+    img = 2 * (img / 255.0) - 1
+
+    if not resize:
+        return img
+    
+    return np.tile(img, (batch_size, 1, 1, 1))
