@@ -16,19 +16,22 @@ from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 latent_dim = 512
 small_image_size = 256
 
-model_save_dest = 'model/img2latent'
-os.system(f"mkdir -p {model_save_dest}")
-
-
 class Image2Latent:
     def __init__(
         self,
         image_dim=small_image_size,
         learning_rate=0.001,
         batch_size=None,
+        sess=None,
     ):
+        
+        model_save_dest = 'model/img2latent'
+        os.system(f"mkdir -p {model_save_dest}")
 
-        self.sess = tf.InteractiveSession()
+        if sess is None:
+            self.sess = tf.InteractiveSession()
+        else:
+            self.sess = sess
 
         # Lazy load
         self.generator = None
@@ -93,14 +96,13 @@ class Image2Latent:
         Renders the current latent vector into an image.
         """
         if self.generator is None:
-            Gs, G, D = load_GAN_model(sess=self.sess)
+            G, D, Gs = load_GAN_model(sess=self.sess)
             self.generator = Gs
             
         z_test = self.sess.run(
             self.z_output,
             feed_dict = {
                 self.model_in : img_true[:1],
-                #self.model_out : np.zeros_like(z_true[:1]),
             })
         z_test = z_test[0]
         
@@ -146,20 +148,22 @@ def image_pipeline(batch_size=5):
             yield Z[idx], img
 
 
-batch_size = 32
-n_epochs = 2000
-n_save_every = 50
 
-ITR = image_pipeline(batch_size)
-clf = Image2Latent(batch_size=batch_size)
+if __name__ == "__main__":
+    batch_size = 32
+    n_epochs = 2000
+    n_save_every = 50
 
-while True:
-    
-    for n, (z,img) in enumerate(ITR):
+    ITR = image_pipeline(batch_size)
+    clf = Image2Latent(batch_size=batch_size)
 
-        if n%n_save_every == 0:
-            clf.render(z, img)
-            s = clf.save()
+    while True:
 
-        lx = clf.train(z, img)
-        print(n, lx)
+        for n, (z,img) in enumerate(ITR):
+
+            if n%n_save_every == 0:
+                clf.render(z, img)
+                s = clf.save()
+
+            lx = clf.train(z, img)
+            print(n, lx)

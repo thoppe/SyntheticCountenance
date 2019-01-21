@@ -5,7 +5,7 @@ Usage:
 
 Options:
   -h --help     Show this screen.
-  --offset=<n>  Latent offset: integer, diffent starting condition [default: 0].
+  --offset=<n>  Latent offset: integer, diffent starting condition [default: ...].
   --learning_rate=<f>  ADAM learning rate [default: 0.005]
   --restart
 """
@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image
 import os, json, glob
 import tensorflow as tf
-from src.GAN_model import load_GAN_model, logger
+from src.GAN_model import load_GAN_model, logger, generate_single
 from src.GAN_model import GAN_output_to_RGB, RGB_to_GAN_output
 
 from P3_keypoints_68 import compute_keypoints as KEY68
@@ -26,9 +26,45 @@ from P1_compute_bbox import compute_bbox
 
 import cv2
 import sklearn.decomposition
+import PIL
+from PIL import Image
+
+from T2_img2latent import Image2Latent
 
 np.random.seed(45)
 n_image_upscale = 1
+
+
+class img2latent_inference:
+
+    def __init__(self, sess=None):
+        self.clf = Image2Latent(sess=sess, batch_size=32)
+
+        if sess is None:
+            self.sess = tf.Session()
+        else:
+            self.sess = sess
+
+        self.sess.run(tf.global_variables_initializer())
+
+    def close(self):
+        self.clf.sess.close()
+        self.sess.close()
+
+    def __call__(self, img):
+        dim = (256, 256)
+        img = Image.open(f_image).resize(dim, Image.ANTIALIAS)
+        img = np.array(img)
+        x = RGB_to_GAN_output(img, resize=False)
+        x = x.transpose(1,0,2)
+        print(x.shape)
+
+        z = self.sess.run(
+            self.clf.z_output,
+            feed_dict = {
+                self.clf.model_in : [x,],
+        })
+        return z.ravel()
 
 def compute_convex_hull_face(img, eyes_only=False):
     """ Assume img is loaded from cv2.imread """
@@ -259,7 +295,6 @@ class GeneratorInverse:
 
     def initialize(self):
         self.sess.run(tf.initializers.variables([self.z]))
-
         self.sess.run(tf.initializers.variables(self.opt.variables()))
 
     def set_target(self, f_image):
@@ -341,7 +376,14 @@ if __name__ == "__main__":
         raise ValueError
 
     name = os.path.basename(f_image).split('.')[0]
-    latent_starting_offset = int(cargs['--offset'])
+
+    offset = cargs['--offset']
+
+    if offset != '...':
+        latent_starting_offset = int(offset)
+    else:
+        latent_starting_offset = "learned"
+
     n_save_every = 10
     is_restart = False
     learning_rate = float(cargs['--learning_rate'])
@@ -354,15 +396,24 @@ if __name__ == "__main__":
     )
 
     if not is_restart:
-        # Find the closest matching image as our starting conditions
-        LFM = latent_face_model()
-        n_reference = LFM.closest_index(f_image)[latent_starting_offset]
-        logger.info(
-            f"Image index {n_reference} has the closest matching features")
 
-        z_init = np.load(
-            f"samples/latent_vectors/{n_reference:06d}.npy")[None, :]
-        f_reference = f'samples/images/{n_reference:06d}.jpg'
+        if offset != '...':
+            # Find the closest matching image as our starting conditions
+            LFM = latent_face_model()
+            n_reference = LFM.closest_index(f_image)[latent_starting_offset]
+            logger.info(
+                f"Image index {n_reference} has the closest matching features")
+            z_init = np.load(
+                f"samples/latent_vectors/{n_reference:06d}.npy")[None, :]
+            f_reference = f'samples/images/{n_reference:06d}.jpg'
+
+        else:
+            logger.info("Trying to infer a starting latent vector.")
+            clf = img2latent_inference()
+            z_init = clf(f_image)[None, :]
+            clf.close()
+            f_reference = f'samples/images/{360:06d}.jpg'
+        
         start_idx = 0
         os.system(f"rm -rf {save_dest} && mkdir -p {save_dest}")
     
@@ -373,13 +424,18 @@ if __name__ == "__main__":
         learning_rate /= 2
         start_idx = int(os.path.basename(f_z).split('.')[0])
 
+    G, D, Gs, sess = load_GAN_model(return_sess=True)
 
-    # Preprocess the image
     if not is_restart:
         img_process = process_image(f_reference, f_image)
         cv2.imwrite(f_processed, img_process)
-
-    G, D, Gs, sess = load_GAN_model(return_sess=True)
+        #else:
+        #    img,_,_ = generate_single(Gs, None, z=z_init[0], compute_discriminator=False)
+        #    P_img = Image.fromarray(img)
+        #    #P_img.save(f_save)
+        #    P_img.show()
+        #   exit()
+    
     GI = GeneratorInverse(Gs, sess, learning_rate=learning_rate, z_init=z_init)
     GI.initialize()
 
