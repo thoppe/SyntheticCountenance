@@ -248,7 +248,7 @@ class GeneratorInverse:
         self.loss = tf.reduce_sum(L1_loss ** 2)
         self.loss /= tf.reduce_sum(self.mask)
 
-        self.loss += tf.abs(1 - (tf.linalg.norm(self.z) / np.sqrt(latent_dim)))
+        #self.loss += tf.abs(1 - (tf.linalg.norm(self.z) / np.sqrt(latent_dim)))
 
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         # self.opt = tf.train.GradientDescentOptimizer(

@@ -12,17 +12,19 @@ dim = 512
 # Create a logger object.
 logger = logging.getLogger(__name__)
 
-def load_GAN_model(return_sess=False):
+def load_GAN_model(return_sess=False, sess=None):
     logger.info("Loading the PGAN model")
 
     import tensorflow as tf
     import sys
     import pickle
 
-    config = tf.ConfigProto(allow_soft_placement=False)
-    config.gpu_options.allow_growth = True
-    # config.gpu_options.per_process_gpu_memory_fraction = 0.45
-    sess = tf.InteractiveSession(config=config)
+    if sess is None:
+        config = tf.ConfigProto(allow_soft_placement=False)
+        config.gpu_options.allow_growth = True
+        # config.gpu_options.per_process_gpu_memory_fraction = 0.45
+        sess = tf.InteractiveSession(config=config)
+    
     
     if not tf.test.is_gpu_available():
         logger.error(
@@ -72,21 +74,27 @@ def generate_single(generator, discriminator, z=None, compute_discriminator=True
     return img, z, ds
 
 
-def GAN_output_to_RGB(img):
+def GAN_output_to_RGB(img, resize=True):
 
     # [-1,1] => [0,255]
     img = np.clip(np.rint((img + 1.0) / 2.0 * 255.0), 0.0, 255.0).astype(np.uint8)
+    if resize:
+        img = img.transpose(0, 2, 3, 1)  # NCHW => NHWC
 
-    img = img.transpose(0, 2, 3, 1)  # NCHW => NHWC
+    #else:
+    #    img = img.transpose(1,2,0)
+        
     return img
 
 
-def RGB_to_GAN_output(img, resize=True):
-    batch_size = 1
-
+def RGB_to_GAN_output(img, resize=True, batch_size=1):
+    
     img = np.array(img)
-    if resize:
+    if resize and batch_size==1:
         img = img.transpose(2, 0, 1)
+
+    if resize and batch_size>1:
+        img = img.transpose(0, 3, 1, 2)
 
     img = img.astype(float)
     img = 2 * (img / 255.0) - 1

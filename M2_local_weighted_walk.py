@@ -74,13 +74,14 @@ if __name__ == "__main__":
 
     if not is_int:
         F_Z = sorted(glob.glob(os.path.join(source_directory, '*.npy')))
-        name = os.path.dirname(source_directory).split('/')[-1]
+        name = os.path.dirname(source_directory+'/').split('/')[-1]
         z0 = np.load(F_Z[-1]).ravel()
     else:
         f_z = f'samples/latent_vectors/{int(source_directory):06d}.npy'
         name = source_directory
         z0 = np.load(f_z).ravel()
 
+        
 
     norm = np.linalg.norm(z0) / np.sqrt(len(z0))
     #z0 /= norm
