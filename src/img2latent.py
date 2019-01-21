@@ -3,22 +3,21 @@ import numpy as np
 import os
 from PIL import Image
 import PIL
-
-from .GAN_model import load_GAN_model, generate_single
+from .GAN_model import load_GAN_model, generate_single, RGB_to_GAN_output
 
 small_image_size = 256
 latent_dim = 512
+model_save_dest = 'model/img2latent'
+
 
 class Image2Latent:
     def __init__(
         self,
         image_dim=small_image_size,
         learning_rate=0.001,
-        batch_size=None,
+        batch_size=1,
         sess=None,
     ):
-        
-        model_save_dest = 'model/img2latent'
         os.system(f"mkdir -p {model_save_dest}")
 
         if sess is None:
@@ -83,6 +82,12 @@ class Image2Latent:
             os.path.join(model_save_dest, 'model.ckpt')
         )
 
+    def load(self):
+        chk = tf.train.latest_checkpoint(model_save_dest)
+        self.saver.restore(self.sess, chk)
+        return self
+
+
     def __call__(self, img):
         '''
         Given a properly preprocesssed image, 
@@ -93,6 +98,12 @@ class Image2Latent:
             feed_dict = {
                 self.model_in : [img,],
         })[0]
+
+    def preprocess_file(self, f_image):
+        dim = (256, 256)
+        img = Image.open(f_image).resize(dim, Image.ANTIALIAS)
+        img = np.array(img)
+        return RGB_to_GAN_output(img, resize=False).transpose(0,1,2)
 
     def draw_latent(self, z):
         

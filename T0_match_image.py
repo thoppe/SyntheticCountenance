@@ -29,42 +29,19 @@ import sklearn.decomposition
 import PIL
 from PIL import Image
 
-from T2_img2latent import Image2Latent
+from src.img2latent import Image2Latent
 
 np.random.seed(45)
 n_image_upscale = 1
 
 
-class img2latent_inference:
+def single_img2latent_inference(f_image):
 
-    def __init__(self, sess=None):
-        self.clf = Image2Latent(sess=sess, batch_size=32)
-
-        if sess is None:
-            self.sess = tf.Session()
-        else:
-            self.sess = sess
-
-        self.sess.run(tf.global_variables_initializer())
-
-    def close(self):
-        self.clf.sess.close()
-        self.sess.close()
-
-    def __call__(self, img):
-        dim = (256, 256)
-        img = Image.open(f_image).resize(dim, Image.ANTIALIAS)
-        img = np.array(img)
-        x = RGB_to_GAN_output(img, resize=False)
-        x = x.transpose(1,0,2)
-        print(x.shape)
-
-        z = self.sess.run(
-            self.clf.z_output,
-            feed_dict = {
-                self.clf.model_in : [x,],
-        })
-        return z.ravel()
+    clf = Image2Latent().load()
+    raw_img = clf.preprocess_file(f_image)
+    z = clf(raw_img)
+    clf.sess.close()
+    return z
 
 def compute_convex_hull_face(img, eyes_only=False):
     """ Assume img is loaded from cv2.imread """
@@ -409,9 +386,7 @@ if __name__ == "__main__":
 
         else:
             logger.info("Trying to infer a starting latent vector.")
-            clf = img2latent_inference()
-            z_init = clf(f_image)[None, :]
-            clf.close()
+            z_init = single_img2latent_inference(f_image)[None, :]
             f_reference = f'samples/images/{360:06d}.jpg'
         
         start_idx = 0
