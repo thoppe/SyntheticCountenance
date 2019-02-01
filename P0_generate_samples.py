@@ -6,7 +6,9 @@ import os, json, glob
 from src.GAN_model import load_GAN_model, generate_single
 
 n_samples = 10 ** 5
+random_seed = 42
 
+np.random.seed(random_seed)
 G, D, Gs = load_GAN_model()
 save_dest_imgs = "samples/images"
 save_dest_info = "samples/latent_vectors"
