@@ -16,5 +16,5 @@ Pillow
 opencv-python
 imutils
 dlib
-pixelhouse>=0.4.2
+pixelhouse>=0.4.3
 
