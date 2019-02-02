@@ -2,7 +2,7 @@ import pixelhouse as ph
 import glob, random, os
 
 F_SAMPLES = glob.glob("samples/images/*")
-#random.shuffle(F_SAMPLES)
+random.shuffle(F_SAMPLES)
 
 f_tags = "analysis/tagged_images.csv"
 
@@ -33,6 +33,14 @@ known.update([os.path.basename(f) for f in
               glob.glob(os.path.join(save_dest_boring, '*'))])
 
 
+print("Use [0] to mark as boring")
+print("Use [1] to mark as high quality")
+print("Use [2] to mark as weird")
+print("Use [space] to skip")
+print("Use [esc] to exit")
+print("Use [backspace] to undo")
+
+
 while F_SAMPLES:
 
     if load_new:
@@ -55,24 +63,39 @@ while F_SAMPLES:
     elif key in [32]:
         continue
 
+    # Backspace, need to undo
+    elif key in [8]:
+        try:
+            print(f"Removing curation label {dst}")        
+            os.remove(dst)
+            f_img = os.path.join("samples/images/", os.path.basename(dst))
+            print(f_img)
+        except Exception as EX:
+            print(f"Can't remove label: {EX}")
+        load_new = False
+        
+        
+
     # Mark as weird!
     elif chr(key) == "2":
         print(f"Saving image {f_img} as weird!")
-        dst = os.path.join(save_dest_weird, base)
-        os.symlink(f_img, dst)
+        dst = os.path.abspath(os.path.join(save_dest_weird, base))
+        src = os.path.abspath(f_img)
+        os.system(f'ln -s {src} {dst}')
 
     # Mark as high quality!
     elif chr(key) == "1":
         print(f"Saving image {f_img} as high quality!")
-        dst = os.path.join(save_dest_hq, base)
-        os.symlink(f_img, dst)
+        dst = os.path.abspath(os.path.join(save_dest_hq, base))
+        src = os.path.abspath(f_img)
+        os.system(f'ln -s {src} {dst}')
     
     # Skip the image
     elif chr(key) == "0":
         print(f"Saving image {f_img} as boring...")
-        dst = os.path.join(save_dest_boring, base)
-        os.symlink(f_img, dst)
-
+        dst = os.path.abspath(os.path.join(save_dest_boring, base))
+        src = os.path.abspath(f_img)
+        os.system(f'ln -s {src} {dst}')
     else:
         print(f"Key {key}, {chr(key)} not known")
         load_new = False
