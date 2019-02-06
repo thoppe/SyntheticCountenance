@@ -18,12 +18,21 @@ import os, json, glob
 import scipy.stats
 from src.GAN_model import load_GAN_model, generate_single, logger
 
+frames_per = 15
 
-def interpolate(Z, frames_per=30):
+def interpolate(Z, frames_per=frames_per):
     n = len(Z)
     T = np.linspace(0, n - 1, n * frames_per)
 
-    sigma = np.random.uniform(low=0.5, high=0.75, size=[n,])
+    #low_s = 0.50
+    #high_s = 0.75
+
+    low_s = 0.75
+    high_s = 1.00
+
+    
+    sigma = np.random.uniform(low=low_s, high=high_s, size=[n,])
+    
     G = [scipy.stats.norm(loc=k, scale=s) for k,s in zip(range(n), sigma)]
 
     for frame_idx, t in tqdm(enumerate(T), total=len(T)):
@@ -125,4 +134,4 @@ if __name__ == "__main__":
     # Scale factor (see arXiv:1711.01970 Table 1)
     Z /= np.sqrt(1 + epsilon ** 2)
 
-    interpolate(Z, frames_per=30)
+    interpolate(Z, frames_per=frames_per)
