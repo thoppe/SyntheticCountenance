@@ -16,22 +16,18 @@ save_dest_info = "samples/latent_vectors"
 os.system(f"mkdir -p {save_dest_imgs}")
 os.system(f"mkdir -p {save_dest_info}")
 
-largest_known = glob.glob(os.path.join(save_dest_imgs, "*"))
-largest_idx = 0
+dim = 512
+known_images = set(glob.glob(os.path.join(save_dest_imgs, "*")))
 
-if len(largest_known):
-    largest_known = os.path.basename(sorted(largest_known)[-1])
-    largest_idx = int(largest_known.split(".")[0])
+for n in tqdm(range(0, n_samples)):
 
-#logger.info(f"Starting generation at {largest_idx}")
-
-for n in tqdm(range(largest_idx, n_samples)):
-
+    z = np.random.randn(dim)
+    
     f_save = os.path.join(save_dest_imgs, f"{n:08d}.jpg")
-    if os.path.exists(f_save):
+    if f_save in known_images:
         continue
 
-    img, z, ds = generate_single(Gs, D, compute_discriminator=False)
+    img, z, ds = generate_single(Gs, D, z=z, compute_discriminator=False)
 
     P_img = Image.fromarray(img)
     P_img.save(f_save)
