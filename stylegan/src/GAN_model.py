@@ -55,6 +55,7 @@ def generate_single(
         zf,
         None,
         truncation_psi=0.7,
+        use_noise=True,
         randomize_noise=False,
         output_transform=fmt
     )
