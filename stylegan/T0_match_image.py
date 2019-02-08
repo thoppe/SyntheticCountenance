@@ -1,7 +1,6 @@
 """
 NEEDS WORK.
 
-
 GAN inverter
 
 Usage:
