@@ -8,16 +8,16 @@ Usage:
 
 Options:
   -h --help     Show this screen.
-  --learning_rate=<f>  ADAM learning rate [default: 0.05]
+  --learning_rate=<f>  ADAM learning rate [default: 0.025]
   --restart
 """
 
 """
-Training 00000042.jpg on 250 epochs, loss:
-1] Single z: 0.6198  (2.2k npy files)
-2] Multi z (10/18 layers): 0.3794 (2.2k npy file, but looks bad!?)
-3] Single z (with noise):
-4] Multi z (with noise):
+Training 00000042.jpg on 250 epochs, loss (lr 0.0025):
+1 ] Single z: 0.5949  (2.2k npy files)
+2 ] Multi z (10/18 layers): 0.3794 (2.2k npy file, but looks bad!?)
+3 ] Single z (with 4 noise): 0.5830
+4 ] Multi z (with noise):
 """
 
 from docopt import docopt
@@ -35,7 +35,7 @@ from src.GAN_model import RGB_to_GAN_output
 import cv2
 import sklearn.decomposition
 
-np.random.seed(48)
+np.random.seed(46)
 n_image_upscale = 1
 
 #model_dest = "model/dlib"
@@ -46,7 +46,7 @@ n_image_upscale = 1
 
 class GeneratorInverse:
     def __init__(self, generator, sess, learning_rate=0.01,
-                 use_mask=True, use_multi=True, z_init=None):
+                 use_mask=True, use_multi=False, z_init=None):
 
         self.sess = sess
         self.target_image = None
@@ -61,7 +61,8 @@ class GeneratorInverse:
         if not self.use_multi:
             z_init = np.random.randn(latent_dim)[None, :]
             self.z = tf.Variable(z_init, dtype=tf.float32)
-            G_out = generator.get_output_for(self.z, None, is_training=False)
+            G_out = generator.get_output_for(
+                self.z, None, is_training=False, randomize_noise=False)
             
         # Multi matching
         elif self.use_multi:
@@ -81,6 +82,11 @@ class GeneratorInverse:
                 [z_val],
                 is_validation=True, randomize_noise=False,
             )
+
+        self.noise_vars = [
+            var for name, var in Gs.components.synthesis.vars.items()
+            if name.startswith('noise')
+        ][:]
 
         # NCHW
         self.img_in = tf.placeholder(
@@ -104,9 +110,8 @@ class GeneratorInverse:
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         #self.opt = tf.train.GradientDescentOptimizer(
         #    learning_rate=learning_rate)
-
-        # Only train the latent variable (hold the generator fixed!)
-        minimize_vars = [self.z,]
+        
+        minimize_vars = [self.z, self.noise_vars]
         
         self.train_op = self.opt.minimize(
             self.loss, var_list=minimize_vars)
@@ -116,7 +121,9 @@ class GeneratorInverse:
             self.sess.run(tf.initializers.variables([self.z, self.z2]))
         else:
             self.sess.run(tf.initializers.variables([self.z]))
-        
+
+        # HERE TOO
+        self.sess.run([self.noise_vars])       
         self.sess.run(tf.initializers.variables(self.opt.variables()))
 
     def set_target(self, f_image):
@@ -222,7 +229,7 @@ if __name__ == "__main__":
     logger.info(f"Starting training against {f_image}")
     GI.set_target(f_image)
 
-    for i in range(0, 20000):
+    for i in range(0, 200000):
 
         # Only save every 10 iterations
         if i % n_save_every == 0:
