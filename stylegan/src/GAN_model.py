@@ -69,3 +69,23 @@ def generate_single(
         ds = None
 
     return img, z, ds
+
+
+
+
+def RGB_to_GAN_output(img, resize=True, batch_size=1):
+    
+    img = np.array(img)
+    if resize and batch_size==1:
+        img = img.transpose(2, 0, 1)
+
+    if resize and batch_size>1:
+        img = img.transpose(0, 3, 1, 2)
+
+    img = img.astype(float)
+    img = 2 * (img / 255.0) - 1
+
+    if not resize:
+        return img
+    
+    return np.tile(img, (batch_size, 1, 1, 1))
