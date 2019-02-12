@@ -89,7 +89,7 @@ class Image_Transformer:
         quad = np.stack([c - x - y, c - x + y, c + x + y, c + x - y])
         qsize = np.hypot(*x) * 2
 
-        img = PIL.Image.open(f_image)
+        img = PIL.Image.open(f_img)
 
         # Shrink.
         shrink = int(np.floor(qsize / output_size * 0.5))

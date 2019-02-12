@@ -1,6 +1,4 @@
 """
-NEEDS WORK.
-
 GAN inverter
 
 Usage:
@@ -17,12 +15,12 @@ Training 00000042.jpg on 250 epochs, loss (lr 0.0025):
 1 ] Single z: 0.5949  (2.2k npy files)
 2 ] Multi z (10/18 layers): 0.3794 (2.2k npy file, but looks bad!?)
 3 ] Single z (with 4 noise): 0.5830
-4 ] Multi z (with noise):
+3 ] Single z (with all noise and mask)
 """
 
 from docopt import docopt
 
-#import dlib
+from U0_transform_image import Image_Transformer
 import numpy as np
 from PIL import Image
 import os, json, glob
@@ -53,6 +51,8 @@ class GeneratorInverse:
         self.use_mask = use_mask
         self.use_multi = use_multi
 
+        self.transformer = Image_Transformer()
+
         latent_dim = 512
         image_dim = 1024
         batch_size = 1
@@ -61,8 +61,15 @@ class GeneratorInverse:
         if not self.use_multi:
             z_init = np.random.randn(latent_dim)[None, :]
             self.z = tf.Variable(z_init, dtype=tf.float32)
+            
             G_out = generator.get_output_for(
-                self.z, None, is_training=False, randomize_noise=False)
+                self.z, None,
+                is_training=False,
+                randomize_noise=False,
+
+                use_noise=True,
+                structure='fixed',
+            )
             
         # Multi matching
         elif self.use_multi:
@@ -88,12 +95,15 @@ class GeneratorInverse:
             if name.startswith('noise')
         ][:]
 
+        self.img_out = G_out
+
         # NCHW
         self.img_in = tf.placeholder(
             tf.float32, shape=(batch_size, 3, image_dim, image_dim)
         )
 
         # L1 error, only train the loss
+        #L1_loss = tf.pow(G_out - self.img_in, 2)
         L1_loss = tf.abs(G_out - self.img_in)
 
         # Sum over the batch_size, channel info
@@ -101,11 +111,12 @@ class GeneratorInverse:
         L1_loss = tf.reduce_sum(L1_loss, axis=0)
 
         # Sum over all pixels
-        #if use_mask:
-        #    L1_loss *= self.mask
+        self.tf_mask = tf.placeholder(dtype=tf.float32)
+        L1_loss *= self.tf_mask
+        
         self.loss = tf.reduce_sum(L1_loss ** 2)
-        self.loss /= 1024**2
-        #self.loss /= tf.reduce_sum(self.mask)
+        self.loss /= tf.reduce_sum(self.tf_mask)
+        #self.loss /= 1024**2
 
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         #self.opt = tf.train.GradientDescentOptimizer(
@@ -115,6 +126,9 @@ class GeneratorInverse:
         
         self.train_op = self.opt.minimize(
             self.loss, var_list=minimize_vars)
+
+        self.image_output = tflib.convert_images_to_uint8(
+            self.img_out, nchw_to_nhwc=True)
 
     def initialize(self):
         if self.use_multi:
@@ -132,8 +146,30 @@ class GeneratorInverse:
         """
         
         # Load the target image
-        img = Image.open(f_image)
+        #img = Image.open(f_image)
+        img = cv2.imread(f_image)
+
+        # Determine the mask
+        mask = self.transformer.get_mask_from_file(f_image)
+
+        # Blur around the face
+        img[~mask] = cv2.blur(img, (10,10))[~mask]
+        img[~mask] = cv2.blur(img, (10,10))[~mask]
+
+        self.mask = np.ones_like(mask)
+
+        # Set values off the mask to still be important
+        self.mask[~mask] = 0.25
+        #cv2.imshow('img1', img)
+        #cv2.waitKey(0)
+
+        # cv2 color fix
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
         self.target_image = RGB_to_GAN_output(img)
+                
+
+        
 
     def render(self, f_save=None):
         """
@@ -145,20 +181,24 @@ class GeneratorInverse:
             tf_latent,
             feed_dict={
                 self.img_in: self.target_image,
-                #self.mask: self.target_mask
+                self.tf_mask: self.mask
             },
         )
-        
+                
+        img = self.sess.run(self.image_output)[0]
+
+        '''        
         fmt = dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True)
         img = Gs.run(
             current_latent,
             None,
-            truncation_psi=0.7,
-            use_noise=False,
+            use_noise=True,
             randomize_noise=False,
-            output_transform=fmt
+            output_transform=fmt,
+            is_validation=True,
         )[0]
-
+        '''
+        
         if f_save is not None:
             P_img = Image.fromarray(img)
             P_img.save(f_save)
@@ -184,7 +224,7 @@ class GeneratorInverse:
             outputs,
             feed_dict={
                 self.img_in: self.target_image,
-                #self.mask: self.target_mask
+                self.tf_mask: self.mask,
             },
         )
 
@@ -202,13 +242,25 @@ if __name__ == "__main__":
         raise ValueError
 
     name = os.path.basename(f_image).split('.')[0]
+    save_dest = f"samples/match_image/{name}"
+
+    os.system(f'rm -rvf {save_dest}')
+    os.system(f'mkdir -p {save_dest}')
+
+    f_processed = f'samples/match_image/train_{name}.jpg'
+    if not os.path.exists(f_processed):
+        clf = Image_Transformer()
+        img_out = clf(f_image)
+        img_out.save(f_processed)
+
+        logger.warning(f"Processed image to {f_processed}")
+
+    f_image = f_processed
 
     n_save_every = 10
     is_restart = False
     learning_rate = float(cargs['--learning_rate'])
 
-    save_dest = f"samples/match_image/{name}"
-    os.system(f'mkdir -p {save_dest}')
 
     f_processed = os.path.join(
         "samples/match_image/",
@@ -237,5 +289,4 @@ if __name__ == "__main__":
 
         loss, z = GI.train()
         norm = np.linalg.norm(z) / np.sqrt(512)
-        print(z.shape)
         logger.debug(f"Epoch {i}, loss {loss:0.4f}, z-norm {norm:0.4f}")
