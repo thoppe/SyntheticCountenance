@@ -176,35 +176,35 @@ class GeneratorInverse:
         Renders the current latent vector into an image.
         """
         tf_latent = self.z
-        
-        current_latent = self.sess.run(
-            tf_latent,
-            feed_dict={
-                self.img_in: self.target_image,
-                self.tf_mask: self.mask
-            },
-        )
+        feed_dict={
+            self.img_in: self.target_image,
+            self.tf_mask: self.mask
+        }
+
+        current_latent = self.sess.run(tf_latent, feed_dict=feed_dict)
+        noise = self.sess.run(self.noise_vars, feed_dict=feed_dict)
                 
         img = self.sess.run(self.image_output)[0]
 
-        '''        
-        fmt = dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True)
-        img = Gs.run(
-            current_latent,
-            None,
-            use_noise=True,
-            randomize_noise=False,
-            output_transform=fmt,
-            is_validation=True,
-        )[0]
-        '''
         
         if f_save is not None:
             P_img = Image.fromarray(img)
             P_img.save(f_save)
 
-            f_npy = f_save.replace(".jpg", ".npy")
-            np.save(f_npy, current_latent)
+            #f_npy = f_save.replace(".jpg", ".npy")
+            #np.save(f_npy, current_latent)
+
+            f_npz = f_save.replace(".jpg", ".npz")
+            kwargs = {"z":current_latent}
+            norms = []
+            for k, nx in enumerate(noise):
+                kwargs[f'noise_{k}'] = nx
+                x = nx.ravel()
+                norms.append(np.linalg.norm(x)/np.sqrt(len(x)))
+            print(np.array(norms))
+            np.savez(f_npz, **kwargs)
+
+            
 
         return img
 
