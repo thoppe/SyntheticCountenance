@@ -43,19 +43,27 @@ n = 13
 for n in range(20,100):
     img_a = cv2.imread(f"samples/images_noise/level_{n:08d}_a.jpg")
 
-
     img = img_a
     hull = clf(img)
     mask = np.zeros((img.shape[0], img.shape[1])).astype(np.uint8)
     mask = cv2.drawContours(mask, [hull], 0, 255, -1)
     mask = mask.astype(bool)
 
-    print(mask)
+    mask_blur = 201
+    background_blur = 51
+    smooth_mask = 255*mask.astype(np.uint8)
+    smooth_mask = cv2.GaussianBlur(smooth_mask, (mask_blur,)*2, 0)/255
+    smooth_mask = smooth_mask.reshape([1024, 1024, 1])
 
+    #cv2.imshow('image',smooth_mask)
+    #cv2.waitKey(0)
+    
     img = cv2.imread(f"samples/images_noise/level_{n:08d}_b.jpg")
-    blur = cv2.GaussianBlur(img, (51,51), 0)
-    img[~mask] = blur[~mask]
+    blur = cv2.GaussianBlur(img, (background_blur,)*2, 0)
 
+    MX = (1-smooth_mask)*blur + smooth_mask*img
+    MX = np.clip(MX, 0, 255).astype(np.uint8)
+    img = MX
 
-    cv2.imshow('image',img)
+    cv2.imshow('image',MX)
     cv2.waitKey(0)
