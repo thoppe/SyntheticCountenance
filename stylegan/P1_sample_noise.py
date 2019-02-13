@@ -6,11 +6,8 @@ import os, json, glob
 from src.GAN_model import load_GAN_model, generate_single
 import dnnlib.tflib as tflib
 
-n_samples = 10 ** 5
-random_seed = 42
-
-f_z = 'samples/latent_vectors/00000042.npy'
-z_base = np.load(f_z)
+n_samples = 20000
+random_seed = 29
 
 ###################################################################
 
@@ -23,24 +20,28 @@ noise_vars = [
     var for name, var in
     Gs.components.synthesis.vars.items() if name.startswith('noise')]
 
-noise_pairs = list(zip(noise_vars, tflib.run(noise_vars)))
+noise_index = 2
 
 # Observation: layer 4 is the hair wave!
-alpha = 1.0
+alpha = 320.0
 
-for k in tqdm(range(len(noise_vars))):
-    for n in tqdm(range(20)):
+for n in tqdm(range(n_samples)):
 
-        f_save = os.path.join(save_dest_imgs, f"level_{k:02d}_{n:08d}.jpg")
+    z_base = np.random.standard_normal(512)
+    nx = noise_vars[noise_index]
 
-        noise_index = k
-        nx = noise_vars[noise_index]
+    noise = np.random.standard_normal(nx.shape)
 
-        small_noise = np.random.standard_normal(nx.shape)
-        small_noise *= alpha
-        tflib.set_vars({nx:small_noise})
+    tflib.set_vars({nx:noise})
+    img, _, _ = generate_single(Gs, D, z=z_base)
 
-        img, _, _ = generate_single(Gs, D, z=z_base)
+    f_save = os.path.join(save_dest_imgs, f"level_{n:08d}_a.jpg")
+    Image.fromarray(img).save(f_save)
 
-        P_img = Image.fromarray(img)
-        P_img.save(f_save)
+
+    tflib.set_vars({nx:alpha*noise})
+    img, _, _ = generate_single(Gs, D, z=z_base)
+
+    f_save = os.path.join(save_dest_imgs, f"level_{n:08d}_b.jpg")
+    Image.fromarray(img).save(f_save)
+    
