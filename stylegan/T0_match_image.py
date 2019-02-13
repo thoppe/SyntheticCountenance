@@ -11,6 +11,10 @@ Options:
 """
 
 """
+
+Note that fitting to all noise is "cheating", as it can map an image 
+to perfect precision
+
 Training 00000042.jpg on 250 epochs, loss (lr 0.0025):
 1 ] Single z: 0.5949  (2.2k npy files)
 2 ] Multi z (10/18 layers): 0.3794 (2.2k npy file, but looks bad!?)
@@ -93,7 +97,15 @@ class GeneratorInverse:
         self.noise_vars = [
             var for name, var in Gs.components.synthesis.vars.items()
             if name.startswith('noise')
-        ][:]
+        ]
+
+        self.noise_loss = 0
+        for nx in self.noise_vars:
+            noise_norm = tf.sqrt(tf.reduce_sum(nx**2))
+            expected_norm = tf.sqrt(tf.reduce_prod(tf.to_float(tf.shape(nx))))
+
+            self.noise_loss += (noise_norm - expected_norm) ** 2
+
 
         self.img_out = G_out
 
@@ -116,7 +128,13 @@ class GeneratorInverse:
         
         self.loss = tf.reduce_sum(L1_loss ** 2)
         self.loss /= tf.reduce_sum(self.tf_mask)
-        #self.loss /= 1024**2
+
+        # Add the noise variance loss
+        self.noise_loss /= len(self.noise_vars)
+        self.noise_loss *= 0.001
+        
+        self.loss += self.noise_loss
+
 
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         #self.opt = tf.train.GradientDescentOptimizer(
@@ -153,8 +171,8 @@ class GeneratorInverse:
         mask = self.transformer.get_mask_from_file(f_image)
 
         # Blur around the face
-        img[~mask] = cv2.blur(img, (10,10))[~mask]
-        img[~mask] = cv2.blur(img, (10,10))[~mask]
+        #img[~mask] = cv2.blur(img, (10,10))[~mask]
+        #img[~mask] = cv2.blur(img, (10,10))[~mask]
 
         self.mask = np.ones_like(mask)
 
@@ -219,8 +237,8 @@ class GeneratorInverse:
                 
         tf_latent = self.z
 
-        outputs = [self.loss, tf_latent, self.train_op]
-        lx, current_latent, _ = self.sess.run(
+        outputs = [self.loss, tf_latent, self.noise_loss, self.train_op,]
+        lx, current_latent, nx, _ = self.sess.run(
             outputs,
             feed_dict={
                 self.img_in: self.target_image,
@@ -228,7 +246,7 @@ class GeneratorInverse:
             },
         )
 
-        return lx, current_latent
+        return lx, current_latent, nx
 
 
 
@@ -287,6 +305,8 @@ if __name__ == "__main__":
         if i % n_save_every == 0:
             GI.render(f"{save_dest}/{i:05d}.jpg")
 
-        loss, z = GI.train()
+        loss, z, noise_loss = GI.train()
         norm = np.linalg.norm(z) / np.sqrt(512)
-        logger.debug(f"Epoch {i}, loss {loss:0.4f}, z-norm {norm:0.4f}")
+        #logger.debug(f"Epoch {i}, loss {loss:0.4f}, z-norm {norm:0.4f}")
+        logger.debug(f"Epoch {i}, loss {loss:0.4f}, z-norm {norm:0.4f} "
+                     f"noise-loss {noise_loss:04f}")

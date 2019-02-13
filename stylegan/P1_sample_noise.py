@@ -26,6 +26,7 @@ noise_vars = [
 noise_pairs = list(zip(noise_vars, tflib.run(noise_vars)))
 
 # Observation: layer 4 is the hair wave!
+alpha = 1.0
 
 for k in tqdm(range(len(noise_vars))):
     for n in tqdm(range(20)):
@@ -36,6 +37,7 @@ for k in tqdm(range(len(noise_vars))):
         nx = noise_vars[noise_index]
 
         small_noise = np.random.standard_normal(nx.shape)
+        small_noise *= alpha
         tflib.set_vars({nx:small_noise})
 
         img, _, _ = generate_single(Gs, D, z=z_base)
