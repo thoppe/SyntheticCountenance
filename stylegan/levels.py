@@ -26,7 +26,7 @@ class FACE_FINDER:
             logger.warning(f"Found {len(faces)} faces in image! Expected one")
         return faces[0]
 
-    def __call__(self, img):
+    def convex_hull(self, img):
         bbox = self.compute_bbox(img)
         pts = self.compute_keypoints(img, bbox)
         hull = cv2.convexHull(pts).squeeze()
@@ -37,33 +37,47 @@ class FACE_FINDER:
     
         return hull
 
+    def blur_mask(self, img, mask_blur=201):
+        h, w = img.shape[:2]
+        
+        hull = self.convex_hull(img)
+        mask = np.zeros((h, w)).astype(np.uint8)
+        mask = cv2.drawContours(mask, [hull], 0, 255, -1)
+        mask = mask.astype(bool)
+
+        mask = 255*mask.astype(np.uint8)
+        mask = cv2.GaussianBlur(mask, (mask_blur,)*2, 0)/255
+        mask = mask.reshape([h, w, 1])
+
+        #cv2.imshow('image',mask)
+        #cv2.waitKey(0)
+        
+        return mask
+
+    def overlay_bg_blur(
+            self, img0, img1,
+            background_blur=51,
+            mask_blur=201,
+    ):
+
+        blur1 = cv2.GaussianBlur(img1, (background_blur,)*2, 0)
+        return combine_images(img1, blur1, self.blur_mask(img0))
+
+
+def combine_images(img0, img1, alpha):
+    dst = (1-alpha)*img1 + alpha*img0
+    return np.clip(dst, 0, 255).astype(np.uint8)
+
+###########################################################################
+
+
 clf = FACE_FINDER()
 
-n = 13
 for n in range(20,100):
     img_a = cv2.imread(f"samples/images_noise/level_{n:08d}_a.jpg")
+    img_b = cv2.imread(f"samples/images_noise/level_{n:08d}_b.jpg")
 
-    img = img_a
-    hull = clf(img)
-    mask = np.zeros((img.shape[0], img.shape[1])).astype(np.uint8)
-    mask = cv2.drawContours(mask, [hull], 0, 255, -1)
-    mask = mask.astype(bool)
+    img = clf.overlay_bg_blur(img_a, img_b)
 
-    mask_blur = 201
-    background_blur = 51
-    smooth_mask = 255*mask.astype(np.uint8)
-    smooth_mask = cv2.GaussianBlur(smooth_mask, (mask_blur,)*2, 0)/255
-    smooth_mask = smooth_mask.reshape([1024, 1024, 1])
-
-    #cv2.imshow('image',smooth_mask)
-    #cv2.waitKey(0)
-    
-    img = cv2.imread(f"samples/images_noise/level_{n:08d}_b.jpg")
-    blur = cv2.GaussianBlur(img, (background_blur,)*2, 0)
-
-    MX = (1-smooth_mask)*blur + smooth_mask*img
-    MX = np.clip(MX, 0, 255).astype(np.uint8)
-    img = MX
-
-    cv2.imshow('image',MX)
+    cv2.imshow('image', img)
     cv2.waitKey(0)
