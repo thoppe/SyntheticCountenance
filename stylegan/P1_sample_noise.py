@@ -9,6 +9,9 @@ import dnnlib.tflib as tflib
 n_samples = 20000
 random_seed = 29
 
+alpha = 320.0
+noise_index = 2
+
 ###################################################################
 
 np.random.seed(random_seed)
@@ -20,10 +23,8 @@ noise_vars = [
     var for name, var in
     Gs.components.synthesis.vars.items() if name.startswith('noise')]
 
-noise_index = 2
 
-# Observation: layer 4 is the hair wave!
-alpha = 320.0
+
 
 for n in tqdm(range(n_samples)):
 
