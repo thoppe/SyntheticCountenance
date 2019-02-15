@@ -33,20 +33,17 @@ def interpolate(Z, frames_per=30):
         zx = (Z.T * weights).sum(axis=1)
         zx /= np.sqrt((weights ** 2).sum())
 
-        print(zx)
-
-        img, *_ = generate_single(Gs, D, z=zx, compute_discriminator=False)
+        img, *_ = generate_single(Gs, None, z=zx, compute_discriminator=False)
 
         yield img
 
 
 ##########################################################################
 
-
-n_transitions = 2
+n_transitions = 6
 n_people = 100
 frames_per = 15
-epsilon = 0.60
+epsilon = 0.80
 random_seed_offset = 2342
 noise_channel = 2
 alpha= 325.0
