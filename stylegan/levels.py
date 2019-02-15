@@ -93,6 +93,7 @@ for n in tqdm(range(len(pts))):
     
     img_a = cv2.imread(f"samples/images_noise/level_{n:08d}_a.jpg")
     img_b = cv2.imread(f"samples/images_noise/level_{n:08d}_b.jpg")
+    #img_b = cv2.imread(f"samples/images_noise/level_{n:08d}_a.jpg")
 
     try:
         img, soft_mask = clf.overlay_bg_blur(img_a, img_b)
@@ -118,6 +119,7 @@ for n in tqdm(range(len(pts))):
     #dy = np.random.randint(low=-512, high=512)
     dx,dy = pts[n]
 
+    # Skip the rotation for now
     #angle = np.random.uniform(-10, 20)
     #M = cv2.getRotationMatrix2D((1024/2,1024/2),angle,1)
     #img = cv2.warpAffine(img,M,(1024,1024))
@@ -132,22 +134,11 @@ for n in tqdm(range(len(pts))):
     IMG.append(img)
     MASK.append(soft_mask)
 
-
-MASK = np.array(MASK)
 img = np.zeros_like(IMG[0])
 
 for src, mask in zip(IMG, MASK):
-    #mx = (mask/norm)[:,:,np.newaxis]
-    mx = mask
+    img = combine_images(src, img, mask)   
 
-    print(img.shape, src.shape, mask.shape)
-    img = combine_images(src, img, mask)
-    
-#print(img.shape)
-#img = combine_images(IMG[0], IMG[1], MASK[0])
-#img = combine_images(IMG[1], IMG[0], MASK[1])
-
+cv2.imwrite("hell.png",img)
 cv2.imshow('image', img)
 cv2.waitKey(0)
-
-print(MASK.shape)
