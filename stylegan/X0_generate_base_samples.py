@@ -41,7 +41,7 @@ def interpolate(Z, frames_per=30):
 ##########################################################################
 
 n_transitions = 6
-n_people = 100
+n_people = 200
 frames_per = 15
 epsilon = 0.80
 random_seed_offset = 2342
