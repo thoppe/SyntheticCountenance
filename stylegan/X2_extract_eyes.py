@@ -57,14 +57,42 @@ def compute(f0, f1):
     keypoints = np.load(f_hull)
 
     if EYE_FLAG == "left":
-        left_eye = keypoints[36:42]  # left-clockwise
+        pts = keypoints[36:42]  # left-clockwise
     elif EYE_FLAG == "right":
-        right_eye = keypoints[42:48]  # left-clockwise
+        pts = keypoints[42:48]  # left-clockwise
 
-    img, mask = clf.blur_mask(img, left_eye)
+    img, mask = clf.blur_mask(img, pts)
     rgba = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
     rgba[:, :, 3] = mask.squeeze()
-    cv2.imwrite(f1, rgba)
+
+    # Set all images to a fixed size
+    height,width = (140, 220)
+    h, w = rgba.shape[:2]
+        
+    assert(height>=h)
+    assert(width>=w)
+
+    imgx = np.zeros((height,width,4), dtype=img.dtype)
+    dh = (height-h)//2
+    dw = (width-w)//2
+    imgx[dh:dh+h, dw:dw+w] = rgba
+
+    '''
+    # Find the CM
+    mask = mask.squeeze()
+    ycoord, xcoord = np.where(mask>-1)
+    ycm = np.average(ycoord, weights=mask.ravel())
+    xcm = np.average(xcoord, weights=mask.ravel())
+
+    delta_h = (ycm - 140//2) / 2
+    delta_w = (xcm - 220//2) / 2
+
+    #Z = cv2.resize(F,(480,380),fx=0, fy=0,interpolation =cv2.INTER_NEAREST)
+    #imgx = np.roll(imgx, int(delta_w), axis=1)
+    #imgx = np.roll(imgx, int(delta_h), axis=0)
+    '''
+    
+    cv2.imwrite(f1, imgx)
 
 EYE_FLAG = 'left'
     
