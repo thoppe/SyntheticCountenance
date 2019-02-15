@@ -32,9 +32,12 @@ class FACE_FINDER:
         faces = self.detector(img, n_upsample)
 
         if len(faces) == 0:
-            logger.warning(
-                f"No faces found in image!")
-            raise ValueError
+            logger.warning(f"No faces found in image! Upsampling")
+            faces = self.detector(img, 2)
+            
+            if len(faces) == 0:
+                logger.error(f"Still can't find a face")
+                raise ValueError
                         
         if len(faces) != 1:
             
@@ -45,6 +48,11 @@ class FACE_FINDER:
             return faces[idx]
 
         return faces[0]
+
+    def keypoints(self, img):
+        bbox = self.compute_bbox(img)
+        pts = self.compute_keypoints(img, bbox)
+        return pts
 
     def convex_hull(self, img):
         bbox = self.compute_bbox(img)
@@ -83,19 +91,18 @@ clf = FACE_FINDER()
 
 def compute(f0, f1):
     img = cv2.imread(f0)
-    hull = clf.convex_hull(img)
     try:
-        hull = clf.convex_hull(img)
-    except:
-        print(f"FAILED ON {f0}")
+        pts = clf.keypoints(img)
+    except Exception as EX:
+        logger.error("Completely failed with {f0} {EX}")
         return False
-    
-    np.save(f1, hull)
+
+    np.save(f1, pts)
 
 PIPE = pipeline.Pipeline(
     load_dest = 'monstergan/base_images/',
     save_dest = 'monstergan/base_keypoints/',
     new_extension = 'npy',
     old_extension = 'jpg',
-    shuffle=True,
+    shuffle=False,
 )(compute, -1)
