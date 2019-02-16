@@ -8,14 +8,11 @@ from tqdm import tqdm
 import os, json, glob
 import cv2
 
-#from imutils import face_utils
-#import imutils, dlib, os
-
 class FACE_FINDER:
     def __init__(self):
         pass
 
-    def blur_mask(self, img, pts, mask_blur=25):
+    def blur_mask(self, img, pts, mask_blur=101, dilate_iterations=25):
         hull = cv2.convexHull(pts).squeeze()
         
         h, w = img.shape[:2]
@@ -24,7 +21,7 @@ class FACE_FINDER:
         mask = cv2.drawContours(mask, [hull], 0, 255, -1)
 
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
-        mask = cv2.dilate(mask, kernel, iterations = 5)
+        mask = cv2.dilate(mask, kernel, iterations = dilate_iterations)
         
         mask = mask.astype(bool)
         mask = 255*mask.astype(np.uint8)
@@ -41,6 +38,7 @@ class FACE_FINDER:
         
         mask = (255*mask.reshape([h, w, 1])).astype(np.uint8)
         #cv2.imshow('image',mask)
+        #cv2.imshow('image',img+mask)
         #cv2.waitKey(0)
         #exit()
         
@@ -51,10 +49,15 @@ clf = FACE_FINDER()
 
 def compute(f0, f1):
     img = cv2.imread(f0)
-    f_hull = os.path.join(
+    f_keypoints = os.path.join(
         'monstergan/base_keypoints/', os.path.basename(f0)).replace(
             '.jpg', '.npy')
-    keypoints = np.load(f_hull)
+
+    if not os.path.exists(f_keypoints):
+        logger.error(f"Can't find {f_keypoints}")
+        return False
+    
+    keypoints = np.load(f_keypoints)
 
     if EYE_FLAG == "left":
         pts = keypoints[36:42]  # left-clockwise
@@ -66,7 +69,9 @@ def compute(f0, f1):
     rgba[:, :, 3] = mask.squeeze()
 
     # Set all images to a fixed size
-    height,width = (140, 220)
+    #height,width = (140, 220)
+    height,width = (300, 400)
+    
     h, w = rgba.shape[:2]
         
     assert(height>=h)
@@ -102,7 +107,7 @@ PIPE = pipeline.Pipeline(
     old_extension = 'jpg',
     new_extension = 'png',
     shuffle=False,
-)(compute, -1)
+)(compute, 1)
 
 
 EYE_FLAG = 'right'
@@ -112,5 +117,5 @@ PIPE = pipeline.Pipeline(
     save_dest = 'monstergan/right_eye/',
     old_extension = 'jpg',
     new_extension = 'png',
-    shuffle=False,
+    shuffle=True,
 )(compute, -1)

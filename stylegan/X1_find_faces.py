@@ -105,4 +105,4 @@ PIPE = pipeline.Pipeline(
     new_extension = 'npy',
     old_extension = 'jpg',
     shuffle=False,
-)(compute, -1)
+)(compute, 1)
