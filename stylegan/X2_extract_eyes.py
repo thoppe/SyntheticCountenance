@@ -12,7 +12,7 @@ class FACE_FINDER:
     def __init__(self):
         pass
 
-    def blur_mask(self, img, pts, mask_blur=101, dilate_iterations=25):
+    def blur_mask(self, img, pts, mask_blur=15, dilate_iterations=5):
         hull = cv2.convexHull(pts).squeeze()
         
         h, w = img.shape[:2]
@@ -69,8 +69,8 @@ def compute(f0, f1):
     rgba[:, :, 3] = mask.squeeze()
 
     # Set all images to a fixed size
-    #height,width = (140, 220)
-    height,width = (300, 400)
+    height,width = (120, 200)
+    #height,width = (300, 400)
     
     h, w = rgba.shape[:2]
         
@@ -107,7 +107,7 @@ PIPE = pipeline.Pipeline(
     old_extension = 'jpg',
     new_extension = 'png',
     shuffle=False,
-)(compute, 1)
+)(compute, -1)
 
 
 EYE_FLAG = 'right'
