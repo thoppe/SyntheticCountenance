@@ -13,7 +13,7 @@ _An exploration of faces within the [PGAN](https://github.com/tkarras/progressiv
 + Look at the data in samples/images/
 + Generate features with `make features`
 
-** Match images ***
-+ With a good
+## Dev NOTES
 
-
+    python 3.6.0
+    tensorflow-gpu==1.12.3
