@@ -21,7 +21,13 @@ with tf.device(device):
     model = Model(base_model.input, x)
     model.load_weights('src/mobilenet_weights.h5')
 
+def process_image(img):
+    x = np.expand_dims(img, axis=0)
+    x = preprocess_input(x)
+    scores = model.predict(x, batch_size=1, verbose=0)[0]
+    return scores
 
+    
 def compute(f0, f1):
     
     img = load_img(f0, target_size=None)
@@ -35,10 +41,11 @@ def compute(f0, f1):
 
     #np.save(f1, pts)
 
-PIPE = pipeline.Pipeline(
-    load_dest = 'data/images/',
-    save_dest = 'data/AS_score/',
-    new_extension = 'npy',
-    old_extension = 'jpg',
-    shuffle=False,
-)(compute, 1)
+if __name__ == "__main__":
+    PIPE = pipeline.Pipeline(
+        load_dest = 'data/images/',
+        save_dest = 'data/AS_score/',
+        new_extension = 'npy',
+        old_extension = 'jpg',
+        shuffle=False,
+    )(compute, 1)
