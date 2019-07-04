@@ -10,7 +10,7 @@ from keras.applications.mobilenet import preprocess_input
 from keras.preprocessing.image import load_img, img_to_array
 import tensorflow as tf
 
-use_GPU = False
+use_GPU = True
 device = "/GPU:0" if use_GPU else "/CPU:0"
 
 with tf.device(device):
@@ -29,8 +29,10 @@ def process_image(img):
 
     
 def compute(f0, f1):
+    target_size = (224, 224)
+    target_size = None
     
-    img = load_img(f0, target_size=None)
+    img = load_img(f0, target_size=target_size)
     x = img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = preprocess_input(x)
@@ -46,5 +48,5 @@ if __name__ == "__main__":
         save_dest = 'data/AS_score/',
         new_extension = 'npy',
         old_extension = 'jpg',
-        shuffle=False,
+        shuffle=True,
     )(compute, 1)

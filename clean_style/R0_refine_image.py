@@ -1,6 +1,5 @@
 import numpy as np
 
-from U0_transform_image import Image_Transformer
 import numpy as np
 from PIL import Image
 import os, json, glob
@@ -22,6 +21,40 @@ from keras.preprocessing.image import load_img, img_to_array
 
 ################################################################
 
+def reduce_var(x, axis=None, keepdims=False):
+    """Variance of a tensor, alongside the specified axis.
+
+    # Arguments
+        x: A tensor or variable.
+        axis: An integer, the axis to compute the variance.
+        keepdims: A boolean, whether to keep the dimensions or not.
+            If `keepdims` is `False`, the rank of the tensor is reduced
+            by 1. If `keepdims` is `True`,
+            the reduced dimension is retained with length 1.
+
+    # Returns
+        A tensor with the variance of elements of `x`.
+    """
+    m = tf.reduce_mean(x, axis=axis, keep_dims=True)
+    devs_squared = tf.square(x - m)
+    return tf.reduce_mean(devs_squared, axis=axis, keep_dims=keepdims)
+
+def reduce_std(x, axis=None, keepdims=False):
+    """Standard deviation of a tensor, alongside the specified axis.
+
+    # Arguments
+        x: A tensor or variable.
+        axis: An integer, the axis to compute the standard deviation.
+        keepdims: A boolean, whether to keep the dimensions or not.
+            If `keepdims` is `False`, the rank of the tensor is reduced
+            by 1. If `keepdims` is `True`,
+            the reduced dimension is retained with length 1.
+
+    # Returns
+        A tensor with the standard deviation of elements of `x`.
+    """
+    return tf.sqrt(reduce_var(x, axis=axis, keepdims=keepdims))
+################################################################
 
 class GeneratorInverse:
     def __init__(self, generator, sess, learning_rate=0.01,
@@ -29,6 +62,12 @@ class GeneratorInverse:
 
         self.sess = sess
         self.canvas = ph.Canvas()
+
+        #help(ph.load("data/images/00002448.jpg").resize)
+        #cv = ph.load("data/images/00002448.jpg")#.resize(output_size=(224,224))
+        #img = cv.img[:, :, :3]
+        #img = np.expand_dims(img, axis=0)
+        #img = preprocess_input(img)        
 
         # Load the aesthetic model
         AES_model = MobileNet(
@@ -40,11 +79,7 @@ class GeneratorInverse:
         AES = Model(AES_model.input, AES)
         AES.load_weights('src/mobilenet_weights.h5')
 
-        
-        # Set stylegan parameters
-        latent_dim = 512
-        image_dim = 1024
-        batch_size = 1
+        #print(AES.predict(img))
 
         # Resize the latent vector
         z_init = z_init[np.newaxis, :]
@@ -63,29 +98,35 @@ class GeneratorInverse:
             randomize_noise=False,
             use_noise=True,
             structure='fixed',
-        )       
+        )
+        img = G_out
 
         # Not sure which one is correct?
-        #img = tf.transpose(G_out, [0, 2, 3, 1])
-        img = tf.transpose(G_out, [0, 3, 2, 1])
+        img = tf.transpose(img, [0, 3, 2, 1])
+        #img = tf.transpose(img, [0, 2, 3, 1])
+
+        #img = tf.image.resize_images(img, [224, 224],
+        #method=tf.image.ResizeMethod.NEAREST_NEIGHBOR,)
 
         
-        img = tf.clip_by_value(img, -1, 1)
-        
+        img = tf.clip_by_value(img, -1, 1)        
         score = AES(img)
         score = tf.squeeze(score)
 
-        self.loss = -tf.reduce_sum(score*[0,1,2,3,4,5,6,7,8,9])        
+        x = score*[0,1,2,3,4,5,6,7,8,9]
+        self.loss = -tf.reduce_sum(x)
+
+        #std = reduce_std(x)
+        #self.loss *= std
+        #self.loss = -
+        
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
         #self.opt = tf.train.GradientDescentOptimizer(
         #    learning_rate=learning_rate)
 
-
-        #minimize_vars = [self.z, self.noise_vars]
-        #minimize_vars = [self.z, ]
-        print(len(self.noise_vars))
-        minimize_vars = [self.z, self.noise_vars[:10]]
+        minimize_vars = [self.z, ]
+        #minimize_vars = [self.z, self.noise_vars[:12]]
         
         self.train_op = self.opt.minimize(
             self.loss, var_list=minimize_vars)
@@ -96,7 +137,7 @@ class GeneratorInverse:
 
         ############################################################
         self.initialize()
-
+        
         return None
 
 
@@ -152,7 +193,13 @@ if __name__ == "__main__":
 
 
     # KNOWN LOSS is 3.19, currently this doesn't match up!!!
-    target_idx = 2448 
+    # Could be the sum vs mean, could be the noise vector not the same
+    # [[0.00823631 0.23314996 0.10744994 0.22848044 0.21742259 0.11340564
+    #   0.04999622 0.02532304 0.01081375 0.00572216]]
+
+    target_idx = 2448
+    #target_idx = 2401
+    
     f_z = f"data/latent_vectors/{target_idx:08d}.npy"
     z = np.load(f_z)
 
@@ -162,11 +209,13 @@ if __name__ == "__main__":
     os.system(f'mkdir -p {save_dest}')
 
     is_restart = False
-    #learning_rate = 0.025
-    learning_rate = 0.050
+    learning_rate = 0.025
+    #learning_rate = 0.20
     n_save_every = 1
 
     G, D, Gs = load_GAN_model()
+    #Gs = None
+    
     sess = tf.get_default_session()
     
     GI = GeneratorInverse(Gs, sess, learning_rate=learning_rate, z_init=z)
