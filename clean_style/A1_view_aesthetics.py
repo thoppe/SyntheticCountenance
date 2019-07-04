@@ -14,12 +14,13 @@ for f in tqdm(F_NPY):
     data.append({
         "f_img":f_img,
         "mu": np.average(range(len(scores)), weights=scores),
+        "scores":scores,
     })
     
 df = pd.DataFrame(data).sort_values("mu", ascending=True)
 
 for _,row in df.iterrows():
-    print(f"Showing {row.f_img}")
+    print(f"Showing {row.f_img}, {row.scores}")
     cv = ph.load(row.f_img)
     cv += ph.text(x=2.5, y=-3, text=f"{row.mu:0.2f}")
     cv.show()
