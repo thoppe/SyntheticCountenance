@@ -10,8 +10,8 @@ random_seed = 42
 
 np.random.seed(random_seed)
 G, D, Gs = load_GAN_model()
-save_dest_imgs = "samples/images"
-save_dest_info = "samples/latent_vectors"
+save_dest_imgs = "data/images"
+save_dest_info = "data/latent_vectors"
 
 os.system(f"mkdir -p {save_dest_imgs}")
 os.system(f"mkdir -p {save_dest_info}")

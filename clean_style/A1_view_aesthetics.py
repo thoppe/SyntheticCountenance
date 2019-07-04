@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-F_NPY = glob.glob('samples/AS_images/*.npy')[:]
-load_dest = 'samples/images/'
+F_NPY = glob.glob('data/AS_score/*.npy')[::-1]
+load_dest = 'data/images/'
 
 data = []
 for f in tqdm(F_NPY):
@@ -16,9 +16,10 @@ for f in tqdm(F_NPY):
         "mu": np.average(range(len(scores)), weights=scores),
     })
     
-df = pd.DataFrame(data).sort_values("mu")#, ascending=False)
+df = pd.DataFrame(data).sort_values("mu", ascending=True)
 
 for _,row in df.iterrows():
+    print(f"Showing {row.f_img}")
     cv = ph.load(row.f_img)
     cv += ph.text(x=2.5, y=-3, text=f"{row.mu:0.2f}")
     cv.show()

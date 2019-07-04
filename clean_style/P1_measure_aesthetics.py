@@ -10,9 +10,10 @@ from keras.applications.mobilenet import preprocess_input
 from keras.preprocessing.image import load_img, img_to_array
 import tensorflow as tf
 
+use_GPU = False
+device = "/GPU:0" if use_GPU else "/CPU:0"
 
-#with tf.device('/CPU:0'):
-with tf.device('/GPU:0'):
+with tf.device(device):
     base_model = MobileNet((None, None, 3), alpha=1,
                            include_top=False, pooling='avg', weights=None)
     x = Dropout(0.75)(base_model.output)
@@ -35,8 +36,8 @@ def compute(f0, f1):
     #np.save(f1, pts)
 
 PIPE = pipeline.Pipeline(
-    load_dest = 'samples/images/',
-    save_dest = 'samples/AS_images/',
+    load_dest = 'data/images/',
+    save_dest = 'data/AS_score/',
     new_extension = 'npy',
     old_extension = 'jpg',
     shuffle=False,

@@ -1,0 +1,9 @@
+typeguard
+numpy
+pandas
+tqdm
+PIL
+requests
+
+keras
+tensorflow-gpu==1.12.0
