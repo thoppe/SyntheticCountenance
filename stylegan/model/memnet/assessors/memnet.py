@@ -378,8 +378,12 @@ class MemNet:
         mean_pred = tf.constant(0.7626, tf.float32)
         mean_pred_add = tf.constant(0.65, tf.float32)
         pred_rescale = tf.constant(2, tf.float32)
-        pred_min = tf.constant(0, tf.float32)
-        pred_max = tf.constant(1, tf.float32)
+
+        # pred_min = tf.constant(0, tf.float32)
+        # pred_max = tf.constant(1, tf.float32)
+
+        pred_min = tf.constant(-10, tf.float32)
+        pred_max = tf.constant(10, tf.float32)
 
         # Final memorability score
         memorability = tf.math.minimum(

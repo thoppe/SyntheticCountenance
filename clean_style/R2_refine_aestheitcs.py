@@ -9,13 +9,25 @@ import tensorflow as tf
 import pixelhouse as ph
 
 ################################################################
-
-from model.memnet.assessors.memnet import MemNet
+from model.memnet.assessors.aestheticsnet import AestheticsNet
 import model.memnet.utils.tensorflow
 
 from src.GAN_model import load_GAN_model, logger, generate_single
 from src.GAN_model import RGB_to_GAN_output  
 
+
+known_keys = 'Aesthetic', 'BalancingElement', 'ColorHarmony', 'Content', 'DoF', 'Light', 'MotionBlur', 'Object', 'Repetition', 'RuleOfThrids', 'Symmetry', 'VividColor'
+
+target_attribute = "Aesthetic"
+direction = 1
+
+#target_attribute = "VividColor"
+#direction =1
+
+#target_attribute = "Repetition"
+#direction = -1
+
+noise_levels = 0
 
 ################################################################
 def initialize_uninitialized(sess):
@@ -59,34 +71,47 @@ class GeneratorInverse:
         # Not sure which one is correct?
         img = tf.transpose(img, [0, 3, 2, 1])
 
-        print(img)
-
         # Resize the image
         img = tf.image.resize_images(img, size=(256,256))
 
+        # Not sure which one is correct?
+        img = tf.transpose(img, [0, 1, 2, 3])
+
         # RGB to BGR
-        img = img[..., ::-1]
+        #img = img[..., ::-1]
 
         # Convert to [0, 255]
         img = (tf.clip_by_value(img, -1, 1) + 1)*(255.0/2)
 
         
-        with tf.variable_scope("memnet") as scope:
-            # Load the memnet model
-            input_shape = (3, 256, 256)
-            image_input = tf.keras.Input(shape=input_shape)
-            model = MemNet()
-        
-        score = model.memnet_fn(model.memnet_preprocess(img))
-        
-        self.loss = -tf.reduce_sum(score)
-        #self.loss = tf.reduce_sum(score)
+        with tf.variable_scope("measure") as scope:
 
+            # Input layer
+            input_shape = (256, 256, 3)
+            image_input = tf.keras.Input(shape=input_shape)
+            model = AestheticsNet()
+
+
+        score = model.aestheticsnet_fn(
+            model.aestheticsnet_preprocess(img),
+            attribute=target_attribute)
+        
+        self.loss = -tf.reduce_sum(score)*direction
+                
+        # Identify the noise vectors
+        self.noise_vars = [
+            var for name, var in Gs.components.synthesis.vars.items()
+            if name.startswith('noise')
+        ]
+
+        print([x for x in self.noise_vars])
+        self.noise_vars = self.noise_vars[:noise_levels]
         
         self.opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
         
         minimize_vars = [self.z, ]
-        #minimize_vars = [self.z, self.noise_vars[:12]]
+        if noise_levels > 0:
+            minimize_vars = [self.z, self.noise_vars]
         
         self.train_op = self.opt.minimize(
             self.loss, var_list=minimize_vars)
@@ -95,12 +120,6 @@ class GeneratorInverse:
         self.image_output = tflib.convert_images_to_uint8(
             G_out, nchw_to_nhwc=True)
 
-        
-        # Identify the noise vectors
-        self.noise_vars = [
-            var for name, var in Gs.components.synthesis.vars.items()
-            if name.startswith('noise')
-        ]
 
         ############################################################
         self.initialize()
@@ -108,6 +127,7 @@ class GeneratorInverse:
     def initialize(self):
         self.sess.run(tf.initializers.variables([self.z]))
         self.sess.run(tf.initializers.variables(self.opt.variables()))
+        self.sess.run(tf.initializers.variables(self.noise_vars))
 
         # Need to keep the networks separate
         initialize_uninitialized(self.sess)
@@ -143,7 +163,8 @@ class GeneratorInverse:
 if __name__ == "__main__":
 
     target_idx = 2448
-    #target_idx = 2401
+    target_idx = 2401
+    target_idx = 2402
     
     f_z = f"data/latent_vectors/{target_idx:08d}.npy"
     z = np.load(f_z)
@@ -153,7 +174,6 @@ if __name__ == "__main__":
     os.system(f'rm -rvf {save_dest}')
     os.system(f'mkdir -p {save_dest}')
 
-    is_restart = False
     learning_rate = 0.025
     #learning_rate = 0.20
     n_save_every = 1
