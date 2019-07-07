@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-F_JSON = glob.glob('data/Aesthetics_score/*.json')
-load_dest = 'data/images/'
+F_JSON = glob.glob("data/Aesthetics_score/*.json")
+load_dest = "data/images/"
 
 data = []
 for f in tqdm(F_JSON):
@@ -13,10 +13,23 @@ for f in tqdm(F_JSON):
         js = json.load(FIN)
         data.append(js)
 
-known_keys = 'Aesthetic', 'BalancingElement', 'ColorHarmony', 'Content', 'DoF', 'Light', 'MotionBlur', 'Object', 'Repetition', 'RuleOfThrids', 'Symmetry', 'VividColor'
+known_keys = (
+    "Aesthetic",
+    "BalancingElement",
+    "ColorHarmony",
+    "Content",
+    "DoF",
+    "Light",
+    "MotionBlur",
+    "Object",
+    "Repetition",
+    "RuleOfThrids",
+    "Symmetry",
+    "VividColor",
+)
 
 size = 0.25
-  
+
 df = pd.DataFrame(data)
 
 
@@ -25,7 +38,7 @@ for key in known_keys:
     df = df.sort_values(key, ascending=False)
 
     good = []
-    for _,row in df[:6].iterrows():
+    for _, row in df[:6].iterrows():
         print(f"Showing {row.f_img}")
         cv = ph.load(row.f_img)
         cv += ph.text(x=2.5, y=-3, text=f"{row[key]:0.2f}")
@@ -34,7 +47,7 @@ for key in known_keys:
     good = ph.hstack(good)
 
     bad = []
-    for _,row in df[::-1][:6].iterrows():
+    for _, row in df[::-1][:6].iterrows():
         print(f"Showing {row.f_img}")
         cv = ph.load(row.f_img)
         cv += ph.text(x=2.5, y=-3, text=f"{row[key]:0.2f}")

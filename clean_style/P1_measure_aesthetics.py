@@ -14,12 +14,14 @@ use_GPU = True
 device = "/GPU:0" if use_GPU else "/CPU:0"
 
 with tf.device(device):
-    base_model = MobileNet((None, None, 3), alpha=1,
-                           include_top=False, pooling='avg', weights=None)
+    base_model = MobileNet(
+        (None, None, 3), alpha=1, include_top=False, pooling="avg", weights=None
+    )
     x = Dropout(0.75)(base_model.output)
-    x = Dense(10, activation='softmax')(x)
+    x = Dense(10, activation="softmax")(x)
     model = Model(base_model.input, x)
-    model.load_weights('src/mobilenet_weights.h5')
+    model.load_weights("src/mobilenet_weights.h5")
+
 
 def process_image(img):
     x = np.expand_dims(img, axis=0)
@@ -27,11 +29,11 @@ def process_image(img):
     scores = model.predict(x, batch_size=1, verbose=0)[0]
     return scores
 
-    
+
 def compute(f0, f1):
     target_size = (224, 224)
     target_size = None
-    
+
     img = load_img(f0, target_size=target_size)
     x = img_to_array(img)
     x = np.expand_dims(x, axis=0)
@@ -40,13 +42,14 @@ def compute(f0, f1):
 
     np.save(f1, scores)
 
-    #np.save(f1, pts)
+    # np.save(f1, pts)
+
 
 if __name__ == "__main__":
     PIPE = pipeline.Pipeline(
-        load_dest = 'data/images/',
-        save_dest = 'data/AS_score/',
-        new_extension = 'npy',
-        old_extension = 'jpg',
+        load_dest="data/images/",
+        save_dest="data/AS_score/",
+        new_extension="npy",
+        old_extension="jpg",
         shuffle=True,
     )(compute, 1)

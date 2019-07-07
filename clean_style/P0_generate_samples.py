@@ -22,7 +22,7 @@ known_images = set(glob.glob(os.path.join(save_dest_imgs, "*")))
 for n in tqdm(range(0, n_samples)):
 
     z = np.random.randn(dim)
-    
+
     f_save = os.path.join(save_dest_imgs, f"{n:08d}.jpg")
     if f_save in known_images:
         continue
