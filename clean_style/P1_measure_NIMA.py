@@ -1,6 +1,5 @@
 from src import pipeline
-from src.logger import logger
-import cv2
+import json
 import numpy as np
 
 from keras.models import Model
@@ -40,16 +39,22 @@ def compute(f0, f1):
     x = preprocess_input(x)
     scores = model.predict(x, batch_size=1, verbose=0)[0]
 
-    np.save(f1, scores)
+    js = {
+        "f_img": f0,
+        "NIMA_mean": float(scores.mean()),
+        "NIMA_std": float(scores.std()),
+    }
+    js = json.dumps(js, indent=2)
 
-    # np.save(f1, pts)
+    with open(f1, "w") as FOUT:
+        FOUT.write(js)
 
 
 if __name__ == "__main__":
     PIPE = pipeline.Pipeline(
         load_dest="data/images/",
-        save_dest="data/AS_score/",
-        new_extension="npy",
+        save_dest="data/NIMA_score/",
+        new_extension="json",
         old_extension="jpg",
         shuffle=True,
     )(compute, 1)
