@@ -1,3 +1,10 @@
+'''
+https://github.com/tyshiwo/MemNet
+
+ ICCV'17 paper "MemNet: A Persistent Memory Network for Image Restoration"
+ (SPOTLIGHT Presentation)
+'''
+
 from src import pipeline
 from src.logger import logger
 import numpy as np

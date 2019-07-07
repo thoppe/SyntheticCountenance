@@ -1,3 +1,13 @@
+'''
+Adaped from 
+
+https://github.com/NVlabs/stylegan
+
+A Style-Based Generator Architecture for Generative Adversarial Networks
+Tero Karras (NVIDIA), Samuli Laine (NVIDIA), Timo Aila (NVIDIA)
+http://stylegan.xyz/paper
+'''
+
 import numpy as np
 import pandas as pd
 from tqdm import tqdm

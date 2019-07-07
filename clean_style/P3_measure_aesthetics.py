@@ -1,3 +1,10 @@
+'''
+https://github.com/aimerykong/deepImageAestheticsAnalysis
+
+Source for the original model:
+Kong, S., Shen, X., Lin, Z., Mech, R., & Fowlkes, C. (2016). Photo aesthetics ranking network with attributes and content adaptation. ArXiv CS, 1606.01621. Retrieved from http://arxiv.org/abs/1606.01621
+'''
+
 from src import pipeline
 from src.logger import logger
 import numpy as np
@@ -37,11 +44,6 @@ def compute(f_img, f1):
 
     with open(f1, "w") as FOUT:
         FOUT.write(js)
-
-
-# https://github.com/aimerykong/deepImageAestheticsAnalysis
-# Source for the original model:
-# Kong, S., Shen, X., Lin, Z., Mech, R., & Fowlkes, C. (2016). Photo aesthetics ranking network with attributes and content adaptation. ArXiv CS, 1606.01621. Retrieved from http://arxiv.org/abs/1606.01621
 
 if __name__ == "__main__":
     PIPE = pipeline.Pipeline(

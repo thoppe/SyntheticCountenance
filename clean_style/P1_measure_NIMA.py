@@ -1,3 +1,12 @@
+'''
+Adapted from:
+
+NIMA: Neural Image Assessment
+Implementation of NIMA: Neural Image Assessment in Keras + Tensorflow with weights for MobileNet model trained on AVA dataset.
+
+https://github.com/titu1994/neural-image-assessment
+'''
+
 from src import pipeline
 import json, os
 import numpy as np
