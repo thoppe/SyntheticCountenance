@@ -1,6 +1,8 @@
 from src import pipeline
-import json
+import json, os
 import numpy as np
+
+from statsmodels.stats.weightstats import DescrStatsW
 
 from keras.models import Model
 from keras.layers import Dense, Dropout
@@ -30,8 +32,9 @@ def process_image(img):
 
 
 def compute(f0, f1):
+    
     target_size = (224, 224)
-    target_size = None
+    #target_size = None
 
     img = load_img(f0, target_size=target_size)
     x = img_to_array(img)
@@ -39,12 +42,15 @@ def compute(f0, f1):
     x = preprocess_input(x)
     scores = model.predict(x, batch_size=1, verbose=0)[0]
 
+    weighted_stats = DescrStatsW(range(len(scores)), weights=scores, ddof=0)
+
     js = {
         "f_img": f0,
-        "NIMA_mean": float(scores.mean()),
-        "NIMA_std": float(scores.std()),
+        "NIMA_mean": float(weighted_stats.mean),
+        "NIMA_std": float(weighted_stats.std),
     }
     js = json.dumps(js, indent=2)
+    print(js)
 
     with open(f1, "w") as FOUT:
         FOUT.write(js)
